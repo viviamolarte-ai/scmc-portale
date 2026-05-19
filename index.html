@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCMC – Portale Pagamenti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #E8522A;
+    --primary-dark: #c94520;
+    --secondary: #3A9E8F;
+    --accent: #F0A500;
+    --bg: #FDF8F3;
+    --text: #1a1a1a;
+    --text-light: #666;
+    --border: #e8ddd4;
+    --radius: 10px;
+    --font-serif: 'Libre Baskerville', Georgia, serif;
+    --font-sans: 'Source Sans 3', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); background: var(--bg); color: var(--text); font-size: 15px; }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, var(--primary), #c94520);
+    color: white;
+    padding: 18px 20px;
+    text-align: center;
+    box-shadow: 0 3px 16px rgba(232,82,42,0.3);
+  }
+  .header h1 { font-family: var(--font-serif); font-size: 1.3rem; margin-bottom: 4px; }
+  .header p { font-size: 0.82rem; opacity: 0.88; }
+
+  /* STATO CONNESSIONE */
+  .status-bar {
+    background: white;
+    border-bottom: 2px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 0.83rem;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #ccc;
+    margin-right: 6px;
+    transition: background 0.3s;
+  }
+  .status-dot.ok { background: #38a169; }
+  .status-dot.error { background: #e53e3e; }
+  .status-dot.loading { background: var(--accent); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* MAIN */
+  .main { max-width: 860px; margin: 0 auto; padding: 20px 14px 50px; }
+
+  /* MESE HEADER */
+  .anno-label {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 24px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  /* CARD STUDENTE */
+  .studente-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(232,82,42,0.07);
+    transition: box-shadow 0.2s;
+  }
+  .studente-card:hover { box-shadow: 0 3px 14px rgba(232,82,42,0.13); }
+  .studente-card.tutto-pagato { opacity: 0.5; }
+
+  .studente-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 16px;
+    background: #f9f4ef;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .studente-nome {
+    font-weight: 700;
+    font-size: 0.97rem;
+  }
+  .studente-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 0.71rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .badge-strumento { background: #e8f4f2; color: #1a6b5e; }
+  .badge-quota { background: #fde8dc; color: #a03310; font-size: 0.8rem; }
+  .badge-ok { background: #d4f4ee; color: #1a6b5e; }
+  .badge-debito { background: #fee2e2; color: #991b1b; }
+
+  /* MESI LISTA */
+  .mesi-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+
+  .mese-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 7px;
+    border: 2px solid var(--border);
+    background: #fffdf9;
+    transition: border-color 0.18s, background 0.18s;
+    cursor: pointer;
+  }
+  .mese-row:hover { border-color: var(--primary); background: #fef7f2; }
+  .mese-row.pagato-ora {
+    border-color: var(--secondary);
+    background: #f0faf8;
+  }
+
+  /* CHECKBOX CUSTOM */
+  .check-wrap {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s;
+    background: white;
+  }
+  .mese-row.pagato-ora .check-wrap {
+    background: var(--secondary);
+    border-color: var(--secondary);
+  }
+  .check-wrap .checkmark {
+    display: none;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .mese-row.pagato-ora .check-wrap .checkmark { display: block; }
+
+  .mese-nome {
+    font-weight: 700;
+    font-size: 0.9rem;
+    min-width: 80px;
+  }
+  .mese-importo {
+    margin-left: auto;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--primary);
+  }
+  .mese-row.pagato-ora .mese-importo { color: var(--secondary); }
+
+  .mese-label-pagato {
+    font-size: 0.75rem;
+    color: var(--secondary);
+    font-weight: 600;
+    display: none;
+  }
+  .mese-row.pagato-ora .mese-label-pagato { display: block; }
+
+  /* GIÀ PAGATI IN PRECEDENZA */
+  .gia-pagati {
+    padding: 8px 16px 12px;
+    font-size: 0.78rem;
+    color: var(--text-light);
+  }
+  .gia-pagati span { color: var(--secondary); font-weight: 700; }
+
+  /* NESSUN SOSPESO */
+  .nessun-sospeso {
+    padding: 10px 16px;
+    font-size: 0.82rem;
+    color: var(--secondary);
+    font-weight: 600;
+  }
+
+  /* SEZIONE DEBITO PREGRESSO */
+  .debito-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 7px;
+    border: 2px solid #fca5a5;
+    background: #fff5f5;
+    cursor: pointer;
+    transition: border-color 0.18s;
+  }
+  .debito-row:hover { border-color: #e53e3e; }
+  .debito-row.pagato-ora { border-color: var(--secondary); background: #f0faf8; }
+
+  /* STICKY FOOTER */
+  .save-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 2px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.10);
+    z-index: 50;
+    flex-wrap: wrap;
+  }
+  .save-bar .totale {
+    font-size: 0.9rem;
+    color: var(--text-light);
+  }
+  .save-bar .totale strong {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    color: var(--secondary);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 20px;
+    border: none;
+    border-radius: 7px;
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.1s;
+    letter-spacing: 0.02em;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+  .btn-secondary { background: var(--secondary); color: white; }
+  .btn-sm { padding: 6px 13px; font-size: 0.78rem; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    top: 20px; right: 20px;
+    background: #1a1a1a;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    z-index: 200;
+    transform: translateY(-60px);
+    opacity: 0;
+    transition: all 0.3s;
+    max-width: 300px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: var(--secondary); }
+  .toast.error { background: #e53e3e; }
+
+  /* LOADING OVERLAY */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(253,248,243,0.88);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* SEZIONE STRUMENTO */
+  .strumento-section { margin-bottom: 6px; }
+
+  /* CONFIG PANEL */
+  .config-panel {
+    background: #fff8f0;
+    border: 2px dashed var(--accent);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 20px;
+    font-size: 0.88rem;
+  }
+  .config-panel h3 { font-family: var(--font-serif); color: var(--accent); margin-bottom: 10px; font-size: 0.92rem; }
+  .config-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .config-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 7px 10px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    outline: none;
+  }
+  .config-input:focus { border-color: var(--accent); }
+  .config-note { font-size: 0.75rem; color: var(--text-light); margin-top: 6px; }
+
+  /* EMPTY */
+  .empty-msg {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-light);
+  }
+  .empty-msg .icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+  @media (max-width: 540px) {
+    .studente-header { padding: 9px 12px; }
+    .mesi-list { padding: 10px 12px; }
+    .mese-nome { min-width: 60px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div style="font-weight:600;color:var(--text-light);" id="loading-msg">Caricamento dati…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<header class="header">
+  <h1>🎵 SCMC – Portale Pagamenti</h1>
+  <p>Mater Carmeli — Registrazione quote studenti</p>
+</header>
+
+<div class="status-bar">
+  <div>
+    <span class="status-dot" id="status-dot"></span>
+    <span id="status-text">Connessione in corso…</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span id="ultimo-aggiornamento" style="font-size:0.78rem;color:var(--text-light);"></span>
+    <button class="btn btn-sm btn-secondary" onclick="caricaDati()">🔄 Ricarica</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- CONFIG JSONBIN (visibile solo se non configurato) -->
+  <div class="config-panel" id="config-panel">
+    <h3>⚙️ Configurazione iniziale</h3>
+    <p style="margin-bottom:10px;">Inserisci la <strong>Master Key</strong> di JSONBin e il <strong>Bin ID</strong> forniti dall'amministratore SCMC.</p>
+    <div class="config-row">
+      <input type="text" class="config-input" id="cfg-masterkey" placeholder="Master Key JSONBin (es. $2a$10$…)">
+      <input type="text" class="config-input" id="cfg-binid" placeholder="Bin ID (es. 64abc123…)">
+      <button class="btn btn-primary btn-sm" onclick="salvaConfig()">Connetti</button>
+    </div>
+    <div class="config-note">Questi dati vengono salvati solo su questo browser e non sono visibili ad altri.</div>
+  </div>
+
+  <div id="contenuto-principale"></div>
+
+</div>
+
+<div class="save-bar" id="save-bar" style="display:none;">
+  <div class="totale">
+    Incassato oggi: <strong id="totale-oggi">€ 0,00</strong>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-primary" id="btn-salva" onclick="salvaPagamenti()" disabled>
+      💾 Salva pagamenti
+    </button>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// CONFIGURAZIONE
+// ================================================================
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+const CFG_KEY = 'scmc_portale_config';
+
+function getConfig() {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveConfig(cfg) { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
+
+function salvaConfig() {
+  const mk = document.getElementById('cfg-masterkey').value.trim();
+  const bid = document.getElementById('cfg-binid').value.trim();
+  if (!mk || !bid) { showToast('Inserisci Master Key e Bin ID', 'error'); return; }
+  saveConfig({ masterKey: mk, binId: bid });
+  document.getElementById('config-panel').style.display = 'none';
+  caricaDati();
+}
+
+// ================================================================
+// COSTANTI
+// ================================================================
+const MESI = ['ott','nov','dic','gen','feb','mar','apr','mag'];
+const MESI_FULL = {
+  ott:'Ottobre', nov:'Novembre', dic:'Dicembre',
+  gen:'Gennaio', feb:'Febbraio', mar:'Marzo',
+  apr:'Aprile', mag:'Maggio'
+};
+
+// Stato locale delle spunte fatte OGGI (non ancora salvate)
+let spunteOggi = {}; // { studenteId: { mese: true/false } }
+let datiRemoti = null; // dati letti da JSONBin
+
+// ================================================================
+// UI HELPERS
+// ================================================================
+function showLoading(msg='Caricamento…') {
+  document.getElementById('loading-msg').textContent = msg;
+  document.getElementById('loading-overlay').classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('show');
+}
+
+function showToast(msg, tipo='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function setStatus(stato, testo) {
+  const dot = document.getElementById('status-dot');
+  dot.className = `status-dot ${stato}`;
+  document.getElementById('status-text').textContent = testo;
+}
+
+function fmt(n) { return '€ ' + Number(n||0).toFixed(2).replace('.',','); }
+
+// ================================================================
+// JSONBIN API
+// ================================================================
+async function leggiDaJsonBin() {
+  const cfg = getConfig();
+  if (!cfg.masterKey || !cfg.binId) throw new Error('Non configurato');
+  const r = await fetch(`${JSONBIN_BASE}/b/${cfg.binId}/latest`, {
+    headers: { 'X-Master-Key': cfg.masterKey }
+  });
+  if (!r.ok) throw new Error(`Errore HTTP ${r.status}`);
+  const json = await r.json();
+  return json.record;
+}
+
+async function scriviSuJsonBin(dati) {
+  const cfg = getConfig();
+  if (!cfg.masterKey || !cfg.binId) throw new Error('Non configurato');
+  const r = await fetch(`${JSONBIN_BASE}/b/${cfg.binId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': cfg.masterKey
+    },
+    body: JSON.stringify(dati)
+  });
+  if (!r.ok) throw new Error(`Errore HTTP ${r.status}`);
+  return await r.json();
+}
+
+// ================================================================
+// CARICA DATI
+// ================================================================
+async function caricaDati() {
+  const cfg = getConfig();
+  if (!cfg.masterKey || !cfg.binId) {
+    document.getElementById('config-panel').style.display = '';
+    setStatus('error', 'Non configurato');
+    return;
+  }
+  document.getElementById('config-panel').style.display = 'none';
+  setStatus('loading', 'Connessione a JSONBin…');
+  showLoading('Caricamento dati studenti…');
+
+  try {
+    datiRemoti = await leggiDaJsonBin();
+    spunteOggi = {};
+    setStatus('ok', 'Connesso · dati aggiornati');
+    const ora = new Date().toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('ultimo-aggiornamento').textContent = `Ultimo caricamento: ${ora}`;
+    renderPortale();
+    document.getElementById('save-bar').style.display = 'flex';
+  } catch(e) {
+    setStatus('error', 'Errore di connessione');
+    showToast('Impossibile caricare i dati: ' + e.message, 'error');
+    document.getElementById('contenuto-principale').innerHTML = `
+      <div class="empty-msg">
+        <div class="icon">⚠️</div>
+        <p>Impossibile connettersi.<br>Verifica la connessione e le credenziali, poi clicca Ricarica.</p>
+      </div>`;
+  } finally {
+    hideLoading();
+  }
+}
+
+// ================================================================
+// RENDER PORTALE
+// ================================================================
+function renderPortale() {
+  const studenti = (datiRemoti && datiRemoti.studenti) || [];
+  const el = document.getElementById('contenuto-principale');
+
+  if (studenti.length === 0) {
+    el.innerHTML = `<div class="empty-msg"><div class="icon">🎓</div><p>Nessuno studente caricato.<br>Chiedi all'amministratore SCMC di sincronizzare i dati.</p></div>`;
+    return;
+  }
+
+  // Raggruppa per strumento
+  const gruppi = {};
+  studenti.forEach(s => {
+    const g = s.strumento || 'Altro';
+    if (!gruppi[g]) gruppi[g] = [];
+    gruppi[g].push(s);
+  });
+
+  let html = '';
+  Object.entries(gruppi).sort().forEach(([strumento, lista]) => {
+    html += `<div class="strumento-section">
+      <div class="anno-label">🎼 ${strumento}</div>`;
+    lista.forEach(s => {
+      html += renderStudenteCard(s);
+    });
+    html += `</div>`;
+  });
+
+  el.innerHTML = html;
+  aggiornaBottoneSalva();
+}
+
+function renderStudenteCard(s) {
+  const mesiSospesi = MESI.filter(m => s.pagamenti && s.pagamenti[m] === 'sospeso');
+  const mesiPagati = MESI.filter(m => s.pagamenti && s.pagamenti[m] === 'pagato');
+  const soloDebitore = s.attivo === 'no';
+
+  // Calcola se ha debito pregresso non ancora spuntato
+  const hasDebito = Number(s.debitoPregresso || 0) > 0;
+  const debSpuntato = spunteOggi[s.id]?.__debito === true;
+
+  const tuttoOk = mesiSospesi.length === 0 && !hasDebito;
+
+  let html = `<div class="studente-card${tuttoOk ? ' tutto-pagato' : ''}" id="card-${s.id}">
+    <div class="studente-header">
+      <div>
+        <div class="studente-nome">${s.nome} ${s.cognome}</div>
+        ${soloDebitore ? '<div style="font-size:0.75rem;color:#999;margin-top:2px;">Non iscritto a.s. 2025/26</div>' : ''}
+      </div>
+      <div class="studente-meta">
+        <span class="badge badge-strumento">${s.strumento || '—'}</span>
+        ${!soloDebitore ? `<span class="badge badge-quota">${fmt(s.quota)}/mese</span>` : ''}
+        ${tuttoOk ? '<span class="badge badge-ok">✓ In regola</span>' : ''}
+        ${hasDebito ? `<span class="badge badge-debito">Preg. ${fmt(s.debitoPregresso)}</span>` : ''}
+      </div>
+    </div>`;
+
+  if (tuttoOk) {
+    html += `<div class="nessun-sospeso">✅ Tutti i pagamenti risultano registrati.</div>`;
+  } else {
+    html += `<div class="mesi-list">`;
+
+    // Debito pregresso (se presente)
+    if (hasDebito) {
+      const spuntato = debSpuntato;
+      html += `
+        <div class="debito-row${spuntato ? ' pagato-ora' : ''}" onclick="toggleDebito('${s.id}', ${s.debitoPregresso})">
+          <div class="check-wrap"><span class="checkmark">✓</span></div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:0.88rem;">Debito a.s. precedente</div>
+            <div style="font-size:0.75rem;color:var(--text-light);">Quota arretrata anno scolastico precedente</div>
+          </div>
+          <div style="font-weight:700;font-size:0.95rem;color:#e53e3e;">${fmt(s.debitoPregresso)}</div>
+          <div style="font-size:0.75rem;color:var(--secondary);font-weight:600;${spuntato?'':'display:none'}">✓ Registrato</div>
+        </div>`;
+    }
+
+    // Mesi sospesi
+    mesiSospesi.forEach(m => {
+      const spuntato = spunteOggi[s.id]?.[m] === true;
+      html += `
+        <div class="mese-row${spuntato ? ' pagato-ora' : ''}" onclick="toggleMese('${s.id}', '${m}', ${s.quota})">
+          <div class="check-wrap"><span class="checkmark">✓</span></div>
+          <div class="mese-nome">${MESI_FULL[m]}</div>
+          <div style="flex:1;font-size:0.78rem;color:var(--text-light);">quota mensile</div>
+          <span class="mese-label-pagato">✓ Registrato</span>
+          <div class="mese-importo">${fmt(s.quota)}</div>
+        </div>`;
+    });
+
+    html += `</div>`;
+
+    // Già pagati (info)
+    if (mesiPagati.length > 0) {
+      html += `<div class="gia-pagati">Già registrati: <span>${mesiPagati.map(m=>MESI_FULL[m]).join(', ')}</span></div>`;
+    }
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+// ================================================================
+// TOGGLE SPUNTE
+// ================================================================
+function toggleMese(sid, mese, quota) {
+  if (!spunteOggi[sid]) spunteOggi[sid] = {};
+  spunteOggi[sid][mese] = !spunteOggi[sid][mese];
+  aggiornaCardUI(sid);
+  aggiornaBottoneSalva();
+}
+
+function toggleDebito(sid, importo) {
+  if (!spunteOggi[sid]) spunteOggi[sid] = {};
+  spunteOggi[sid].__debito = !spunteOggi[sid].__debito;
+  aggiornaCardUI(sid);
+  aggiornaBottoneSalva();
+}
+
+function aggiornaCardUI(sid) {
+  // Ri-renderizza solo questa card
+  const studenti = (datiRemoti && datiRemoti.studenti) || [];
+  const s = studenti.find(x => x.id === sid);
+  if (!s) return;
+  const cardEl = document.getElementById('card-' + sid);
+  if (!cardEl) return;
+  cardEl.outerHTML = renderStudenteCard(s);
+}
+
+function aggiornaBottoneSalva() {
+  let totale = 0;
+  let nSpunte = 0;
+  Object.entries(spunteOggi).forEach(([sid, mesi]) => {
+    const studenti = (datiRemoti && datiRemoti.studenti) || [];
+    const s = studenti.find(x => x.id === sid);
+    if (!s) return;
+    Object.entries(mesi).forEach(([m, val]) => {
+      if (!val) return;
+      if (m === '__debito') { totale += Number(s.debitoPregresso || 0); nSpunte++; }
+      else { totale += Number(s.quota || 0); nSpunte++; }
+    });
+  });
+
+  document.getElementById('totale-oggi').textContent = fmt(totale);
+  const btn = document.getElementById('btn-salva');
+  btn.disabled = nSpunte === 0;
+  btn.textContent = nSpunte > 0
+    ? `💾 Salva ${nSpunte} pagamento${nSpunte > 1 ? 'i' : ''}`
+    : '💾 Salva pagamenti';
+}
+
+// ================================================================
+// SALVA PAGAMENTI
+// ================================================================
+async function salvaPagamenti() {
+  const cfg = getConfig();
+  if (!cfg.masterKey || !cfg.binId) { showToast('Non configurato', 'error'); return; }
+
+  // Conta spunte attive
+  const spunteAttive = Object.entries(spunteOggi).filter(([sid, mesi]) =>
+    Object.values(mesi).some(v => v)
+  );
+  if (spunteAttive.length === 0) { showToast('Nessuna spunta da salvare', 'error'); return; }
+
+  showLoading('Salvataggio in corso…');
+  document.getElementById('btn-salva').disabled = true;
+
+  try {
+    // Aggiorna i dati locali con le spunte
+    const nuoviDati = JSON.parse(JSON.stringify(datiRemoti)); // deep clone
+    const ora = new Date().toISOString();
+
+    Object.entries(spunteOggi).forEach(([sid, mesi]) => {
+      const s = nuoviDati.studenti.find(x => x.id === sid);
+      if (!s) return;
+      Object.entries(mesi).forEach(([m, val]) => {
+        if (!val) return;
+        if (m === '__debito') {
+          s.debitoPregresso = 0; // debito saldato
+          if (!s.logPagamenti) s.logPagamenti = [];
+          s.logPagamenti.push({ data: ora, tipo: 'debito_pregresso', importo: s.debitoPregresso });
+        } else {
+          s.pagamenti[m] = 'pagato';
+          if (!s.logPagamenti) s.logPagamenti = [];
+          s.logPagamenti.push({ data: ora, mese: m, importo: s.quota });
+        }
+      });
+    });
+
+    nuoviDati.ultimoAggiornamento = ora;
+    nuoviDati.ultimoOperatore = 'Mater Carmeli';
+
+    await scriviSuJsonBin(nuoviDati);
+
+    datiRemoti = nuoviDati;
+    spunteOggi = {};
+
+    showToast('✓ Pagamenti salvati correttamente!', 'success');
+    const oraFmt = new Date().toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('ultimo-aggiornamento').textContent = `Salvato alle ${oraFmt}`;
+    renderPortale();
+
+  } catch(e) {
+    showToast('Errore nel salvataggio: ' + e.message, 'error');
+    document.getElementById('btn-salva').disabled = false;
+  } finally {
+    hideLoading();
+  }
+}
+
+// ================================================================
+// INIT
+// ================================================================
+function init() {
+  const cfg = getConfig();
+  if (cfg.masterKey && cfg.binId) {
+    document.getElementById('config-panel').style.display = 'none';
+    caricaDati();
+  } else {
+    setStatus('error', 'Configurazione richiesta');
+    document.getElementById('save-bar').style.display = 'none';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
