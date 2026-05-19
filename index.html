@@ -605,6 +605,22 @@ function renderStudenteCard(s) {
         </div>`;
     }
 
+    // Iscrizione (se non pagata)
+    const iscNonPagata = s.attivo !== 'no' && s.iscrizioneStato !== 'pagata';
+    const iscSpuntata = spunteOggi[s.id]?.__iscrizione === true;
+    if (iscNonPagata) {
+      html += `
+        <div class="debito-row${iscSpuntata ? ' pagato-ora' : ''}" onclick="toggleIscrizione('${s.id}', ${s.iscrizioneQuota||50})" style="border-color:${iscSpuntata?'var(--secondary)':'var(--accent)'};">
+          <div class="check-wrap"><span class="checkmark">✓</span></div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:0.88rem;">📋 Quota iscrizione a.s. 2025/26</div>
+            <div style="font-size:0.75rem;color:var(--text-light);">${s.iscrizioneQuota === 25 ? 'Tariffa fratello/sorella' : 'Tariffa standard'}</div>
+          </div>
+          <div style="font-weight:700;font-size:0.95rem;color:var(--accent-dark, #cc8c00);">€ ${Number(s.iscrizioneQuota||50).toFixed(2).replace('.',',')}</div>
+          <div style="font-size:0.75rem;color:var(--secondary);font-weight:600;${iscSpuntata?'':'display:none'}">✓ Registrata</div>
+        </div>`;
+    }
+
     // Mesi sospesi
     mesiSospesi.forEach(m => {
       const spuntato = spunteOggi[s.id]?.[m] === true;
@@ -647,6 +663,13 @@ function toggleDebito(sid, importo) {
   aggiornaBottoneSalva();
 }
 
+function toggleIscrizione(sid, importo) {
+  if (!spunteOggi[sid]) spunteOggi[sid] = {};
+  spunteOggi[sid].__iscrizione = !spunteOggi[sid].__iscrizione;
+  aggiornaCardUI(sid);
+  aggiornaBottoneSalva();
+}
+
 function aggiornaCardUI(sid) {
   // Ri-renderizza solo questa card
   const studenti = (datiRemoti && datiRemoti.studenti) || [];
@@ -667,6 +690,7 @@ function aggiornaBottoneSalva() {
     Object.entries(mesi).forEach(([m, val]) => {
       if (!val) return;
       if (m === '__debito') { totale += Number(s.debitoPregresso || 0); nSpunte++; }
+      else if (m === '__iscrizione') { totale += Number(s.iscrizioneQuota || 50); nSpunte++; }
       else { totale += Number(s.quota || 0); nSpunte++; }
     });
   });
@@ -706,9 +730,13 @@ async function salvaPagamenti() {
       Object.entries(mesi).forEach(([m, val]) => {
         if (!val) return;
         if (m === '__debito') {
-          s.debitoPregresso = 0; // debito saldato
+          s.debitoPregresso = 0;
           if (!s.logPagamenti) s.logPagamenti = [];
-          s.logPagamenti.push({ data: ora, tipo: 'debito_pregresso', importo: s.debitoPregresso });
+          s.logPagamenti.push({ data: ora, tipo: 'debito_pregresso', importo: Number(s.debitoPregresso) });
+        } else if (m === '__iscrizione') {
+          s.iscrizioneStato = 'pagata';
+          if (!s.logPagamenti) s.logPagamenti = [];
+          s.logPagamenti.push({ data: ora, tipo: 'iscrizione', importo: Number(s.iscrizioneQuota||50) });
         } else {
           s.pagamenti[m] = 'pagato';
           if (!s.logPagamenti) s.logPagamenti = [];
