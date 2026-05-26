@@ -1821,14 +1821,35 @@ async function pubblicaSuJsonBin() {
   const status = document.getElementById('jsonbin-status');
   status.textContent = '⏳ Pubblicazione in corso…';
   try {
-    const payload = {
+    const payload = JSON.stringify({
       studenti: getStudenti(),
       ultimoAggiornamento: new Date().toISOString(),
       fonte: 'SCMC Gestionale'
-    };
-    const url = cfg.scriptUrl + '?action=write&payload=' + encodeURIComponent(JSON.stringify(payload));
-    const res = await jsonpRequest(url);
-    if (!res.ok) throw new Error(res.error || 'Errore');
+    });
+    
+    // Dividi in chunks da 1500 caratteri (sicuro per URL)
+    const CHUNK_SIZE = 1500;
+    const ts = Date.now();
+    const chunks = [];
+    for (let i = 0; i < payload.length; i += CHUNK_SIZE) {
+      chunks.push(payload.slice(i, i + CHUNK_SIZE));
+    }
+    
+    status.textContent = `⏳ Invio dati (${chunks.length} parti)…`;
+    
+    for (let i = 0; i < chunks.length; i++) {
+      const chunkPayload = JSON.stringify({
+        index: i,
+        total: chunks.length,
+        ts: ts,
+        data: chunks[i]
+      });
+      const url = cfg.scriptUrl + '?action=write_chunk&payload=' + encodeURIComponent(chunkPayload);
+      const res = await jsonpRequest(url);
+      if (!res.ok) throw new Error(res.error || 'Errore chunk ' + i);
+      status.textContent = `⏳ Invio dati (${i+1}/${chunks.length})…`;
+    }
+    
     status.textContent = '✅ Dati pubblicati sul portale — ' + new Date().toLocaleTimeString('it-IT');
   } catch(e) {
     status.textContent = '❌ Errore: ' + e.message;
