@@ -1643,7 +1643,7 @@ function esportaPrimaNota(mese) {
 function renderImpostazioni() {
   const imp = getImpostazioni();
   const el = document.getElementById('contenuto-impostazioni');
-  const jbCfg = getJsonBinConfig();
+  const jbCfg = getGScriptConfig();
   el.innerHTML = `
     <div class="impost-section">
       <h3>💶 Tariffe</h3>
@@ -1695,15 +1695,9 @@ function renderImpostazioni() {
       <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:10px;">
         Collega il gestionale a JSONBin per sincronizzare i pagamenti con il portale dell'amministrazione.
       </p>
-      <div class="form-row" style="margin-bottom:10px;">
-        <div class="form-group">
-          <label>Master Key JSONBin</label>
-          <input type="text" class="form-control" id="imp-jsonbin-key" placeholder="$2a$10$…" value="${jbCfg.masterKey||''}">
-        </div>
-        <div class="form-group">
-          <label>Bin ID</label>
-          <input type="text" class="form-control" id="imp-jsonbin-bid" placeholder="64abc123…" value="${jbCfg.binId||''}">
-        </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label>URL Google Apps Script</label>
+        <input type="text" class="form-control" id="imp-jsonbin-key" placeholder="https://script.google.com/macros/s/…" value="${jbCfg.scriptUrl||''}">
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn btn-primary btn-sm" onclick="salvaConfigJsonBin()">💾 Salva credenziali</button>
@@ -1754,6 +1748,7 @@ function backupJSON() {
   a.href = URL.createObjectURL(blob);
   a.download = `SCMC_backup_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
+  localStorage.setItem('scmc_ultimo_backup', Date.now());
 }
 
 function ripristinaJSON(ev) {
@@ -1783,27 +1778,46 @@ function resetDati() {
 }
 
 // ================================================================
-// JSONBIN SYNC
+// GOOGLE SHEETS SYNC
 // ================================================================
-const JSONBIN_BASE_SCMC = 'https://api.jsonbin.io/v3';
-const CFG_JSONBIN_KEY = 'scmc_jsonbin_config';
+const CFG_GSCRIPT_KEY = 'scmc_gscript_config';
 
-function getJsonBinConfig() {
-  try { return JSON.parse(localStorage.getItem(CFG_JSONBIN_KEY)) || {}; }
+function getGScriptConfig() {
+  try { return JSON.parse(localStorage.getItem(CFG_GSCRIPT_KEY)) || {}; }
   catch { return {}; }
 }
 
 function salvaConfigJsonBin() {
-  const mk = document.getElementById('imp-jsonbin-key').value.trim();
-  const bid = document.getElementById('imp-jsonbin-bid').value.trim();
-  if (!mk || !bid) { alert('Inserisci Master Key e Bin ID'); return; }
-  localStorage.setItem(CFG_JSONBIN_KEY, JSON.stringify({ masterKey: mk, binId: bid }));
-  document.getElementById('jsonbin-status').textContent = '✓ Credenziali salvate';
+  const url = document.getElementById('imp-jsonbin-key').value.trim();
+  if (!url) { alert('Inserisci URL Google Script'); return; }
+  localStorage.setItem(CFG_GSCRIPT_KEY, JSON.stringify({ scriptUrl: url }));
+  document.getElementById('jsonbin-status').textContent = '✓ URL salvato';
+}
+
+function jsonpRequest(url) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'scmc_cb_' + Date.now();
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      document.body.removeChild(script);
+      reject(new Error('Timeout'));
+    }, 10000);
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      document.body.removeChild(script);
+      resolve(data);
+    };
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    script.onerror = () => { clearTimeout(timeout); reject(new Error('Script error')); };
+    document.body.appendChild(script);
+  });
 }
 
 async function pubblicaSuJsonBin() {
-  const cfg = getJsonBinConfig();
-  if (!cfg.masterKey || !cfg.binId) { alert('Configura prima Master Key e Bin ID'); return; }
+  const cfg = getGScriptConfig();
+  if (!cfg.scriptUrl) { alert('Configura prima URL Google Script'); return; }
   const status = document.getElementById('jsonbin-status');
   status.textContent = '⏳ Pubblicazione in corso…';
   try {
@@ -1812,12 +1826,9 @@ async function pubblicaSuJsonBin() {
       ultimoAggiornamento: new Date().toISOString(),
       fonte: 'SCMC Gestionale'
     };
-    const r = await fetch(`${JSONBIN_BASE_SCMC}/b/${cfg.binId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': cfg.masterKey },
-      body: JSON.stringify(payload)
-    });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const url = cfg.scriptUrl + '?action=write&payload=' + encodeURIComponent(JSON.stringify(payload));
+    const res = await jsonpRequest(url);
+    if (!res.ok) throw new Error(res.error || 'Errore');
     status.textContent = '✅ Dati pubblicati sul portale — ' + new Date().toLocaleTimeString('it-IT');
   } catch(e) {
     status.textContent = '❌ Errore: ' + e.message;
@@ -1828,17 +1839,15 @@ let _pendingVerifica = []; // cache dei cambiamenti da verificare
 let _ultimiConfermati = []; // pagamenti confermati nell'ultima sessione di sync
 
 async function sincronizzaDaJsonBin() {
-  const cfg = getJsonBinConfig();
-  if (!cfg.masterKey || !cfg.binId) { alert('Configura prima Master Key e Bin ID'); return; }
+  const cfg = getGScriptConfig();
+  if (!cfg.scriptUrl) { alert('Configura prima URL Google Script'); return; }
   const status = document.getElementById('jsonbin-status');
   status.textContent = '⏳ Sincronizzazione in corso…';
   try {
-    const r = await fetch(`${JSONBIN_BASE_SCMC}/b/${cfg.binId}/latest`, {
-      headers: { 'X-Master-Key': cfg.masterKey }
-    });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const json = await r.json();
-    const remoti = json.record;
+    const url = cfg.scriptUrl + '?action=read';
+    const json = await jsonpRequest(url);
+    if (!json.ok) throw new Error(json.error || 'Errore lettura');
+    const remoti = json.data;
     if (!remoti || !remoti.studenti) throw new Error('Dati non validi');
 
     const locali = getStudenti();
@@ -1972,6 +1981,64 @@ function init() {
   document.getElementById('header-anno').textContent = imp.annoScolastico;
   initRiepilogoMese();
   renderStudenti();
+  checkPromemoriaBackup();
+}
+
+function checkPromemoriaBackup() {
+  const BACKUP_KEY = 'scmc_ultimo_backup';
+  const INTERVALLO_GIORNI = 7;
+  const ultimo = localStorage.getItem(BACKUP_KEY);
+  const ora = Date.now();
+
+  if (!ultimo) {
+    // Prima volta — salva la data e non mostrare nulla
+    localStorage.setItem(BACKUP_KEY, ora);
+    return;
+  }
+
+  const giorniPassati = Math.floor((ora - parseInt(ultimo)) / (1000 * 60 * 60 * 24));
+  if (giorniPassati >= INTERVALLO_GIORNI) {
+    mostraToastBackup(giorniPassati);
+  }
+}
+
+function mostraToastBackup(giorni) {
+  // Crea banner in cima alla pagina
+  const banner = document.createElement('div');
+  banner.id = 'backup-banner';
+  banner.style.cssText = `
+    position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+    background: linear-gradient(135deg, #F0A500, #cc8c00);
+    color: white; padding: 10px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+    font-family: var(--font-sans); font-size: 0.88rem; font-weight: 600;
+    box-shadow: 0 3px 12px rgba(240,165,0,0.4);
+  `;
+  banner.innerHTML = `
+    <span>⚠️ Ultimo backup: <strong>${giorni} giorni fa</strong> — Ti consiglio di fare un backup prima di continuare.</span>
+    <div style="display:flex;gap:8px;">
+      <button onclick="backupJSONConPromemoria()" style="background:white;color:#cc8c00;border:none;padding:6px 14px;border-radius:6px;font-weight:700;cursor:pointer;font-family:var(--font-sans);">💾 Backup ora</button>
+      <button onclick="chiudiBannerBackup()" style="background:rgba(255,255,255,0.2);color:white;border:none;padding:6px 12px;border-radius:6px;font-weight:700;cursor:pointer;font-family:var(--font-sans);">✕ Dopo</button>
+    </div>
+  `;
+  // Sposta il contenuto verso il basso
+  document.body.insertBefore(banner, document.body.firstChild);
+  document.querySelector('.app-header').style.marginTop = banner.offsetHeight + 'px';
+}
+
+function backupJSONConPromemoria() {
+  backupJSON();
+  localStorage.setItem('scmc_ultimo_backup', Date.now());
+  chiudiBannerBackup();
+}
+
+function chiudiBannerBackup() {
+  const banner = document.getElementById('backup-banner');
+  if (banner) {
+    document.querySelector('.app-header').style.marginTop = '';
+    banner.remove();
+  }
 }
 
 init();
