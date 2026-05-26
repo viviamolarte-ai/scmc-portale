@@ -376,13 +376,12 @@
   <!-- CONFIG JSONBIN (visibile solo se non configurato) -->
   <div class="config-panel" id="config-panel">
     <h3>⚙️ Configurazione iniziale</h3>
-    <p style="margin-bottom:10px;">Inserisci la <strong>Master Key</strong> di JSONBin e il <strong>Bin ID</strong> forniti dall'amministratore SCMC.</p>
+    <p style="margin-bottom:10px;">Inserisci l'<strong>URL Google Script</strong> fornito dall'amministratore SCMC.</p>
     <div class="config-row">
-      <input type="text" class="config-input" id="cfg-masterkey" placeholder="Master Key JSONBin (es. $2a$10$…)">
-      <input type="text" class="config-input" id="cfg-binid" placeholder="Bin ID (es. 64abc123…)">
+      <input type="text" class="config-input" id="cfg-masterkey" placeholder="https://script.google.com/macros/s/…" style="flex:2;">
       <button class="btn btn-primary btn-sm" onclick="salvaConfig()">Connetti</button>
     </div>
-    <div class="config-note">Questi dati vengono salvati solo su questo browser e non sono visibili ad altri.</div>
+    <div class="config-note">L'URL viene salvato solo su questo browser. Richiedilo all'amministratore SCMC.</div>
   </div>
 
   <div id="contenuto-principale"></div>
@@ -414,10 +413,9 @@ function getConfig() {
 function saveConfig(cfg) { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
 
 function salvaConfig() {
-  const mk = document.getElementById('cfg-masterkey').value.trim();
-  const bid = document.getElementById('cfg-binid').value.trim();
-  if (!mk || !bid) { showToast('Inserisci Master Key e Bin ID', 'error'); return; }
-  saveConfig({ masterKey: mk, binId: bid });
+  const url = document.getElementById('cfg-masterkey').value.trim();
+  if (!url) { showToast('Inserisci URL Google Script', 'error'); return; }
+  saveConfig({ scriptUrl: url });
   document.getElementById('config-panel').style.display = 'none';
   caricaDati();
 }
@@ -465,30 +463,42 @@ function fmt(n) { return '€ ' + Number(n||0).toFixed(2).replace('.',','); }
 // ================================================================
 // JSONBIN API
 // ================================================================
+function jsonpRequest(url) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'scmc_cb_' + Date.now();
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      if (script.parentNode) document.body.removeChild(script);
+      reject(new Error('Timeout'));
+    }, 10000);
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      if (script.parentNode) document.body.removeChild(script);
+      resolve(data);
+    };
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    script.onerror = () => { clearTimeout(timeout); reject(new Error('Errore script')); };
+    document.body.appendChild(script);
+  });
+}
+
 async function leggiDaJsonBin() {
   const cfg = getConfig();
-  if (!cfg.masterKey || !cfg.binId) throw new Error('Non configurato');
-  const r = await fetch(`${JSONBIN_BASE}/b/${cfg.binId}/latest`, {
-    headers: { 'X-Master-Key': cfg.masterKey }
-  });
-  if (!r.ok) throw new Error(`Errore HTTP ${r.status}`);
-  const json = await r.json();
-  return json.record;
+  if (!cfg.scriptUrl) throw new Error('Non configurato');
+  const res = await jsonpRequest(cfg.scriptUrl + '?action=read');
+  if (!res.ok) throw new Error(res.error || 'Errore lettura');
+  return res.data;
 }
 
 async function scriviSuJsonBin(dati) {
   const cfg = getConfig();
-  if (!cfg.masterKey || !cfg.binId) throw new Error('Non configurato');
-  const r = await fetch(`${JSONBIN_BASE}/b/${cfg.binId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Master-Key': cfg.masterKey
-    },
-    body: JSON.stringify(dati)
-  });
-  if (!r.ok) throw new Error(`Errore HTTP ${r.status}`);
-  return await r.json();
+  if (!cfg.scriptUrl) throw new Error('Non configurato');
+  const url = cfg.scriptUrl + '?action=write&payload=' + encodeURIComponent(JSON.stringify(dati));
+  const res = await jsonpRequest(url);
+  if (!res.ok) throw new Error(res.error || 'Errore scrittura');
+  return res;
 }
 
 // ================================================================
@@ -771,7 +781,7 @@ async function salvaPagamenti() {
 // ================================================================
 function init() {
   const cfg = getConfig();
-  if (cfg.masterKey && cfg.binId) {
+  if (cfg.scriptUrl) {
     document.getElementById('config-panel').style.display = 'none';
     caricaDati();
   } else {
