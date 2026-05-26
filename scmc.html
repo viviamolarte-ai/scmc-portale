@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCMC – Gestionale Scuola di Musica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #E8522A;
+    --primary-dark: #c94520;
+    --secondary: #3A9E8F;
+    --secondary-dark: #2d8070;
+    --accent: #F0A500;
+    --accent-dark: #cc8c00;
+    --bg: #FDF8F3;
+    --bg-card: #ffffff;
+    --text: #1a1a1a;
+    --text-light: #5a5a5a;
+    --border: #e8ddd4;
+    --shadow: 0 2px 12px rgba(232,82,42,0.10);
+    --radius: 10px;
+    --font-serif: 'Libre Baskerville', Georgia, serif;
+    --font-sans: 'Source Sans 3', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+  }
+
+  /* HEADER */
+  .app-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #c94520 60%, #a33a1a 100%);
+    color: white;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 3px 16px rgba(232,82,42,0.30);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .header-logo {
+    height: 52px;
+    width: auto;
+    border-radius: 6px;
+    background: white;
+    padding: 3px;
+  }
+  .header-title h1 {
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  .header-title p {
+    font-size: 0.78rem;
+    opacity: 0.85;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .header-anno {
+    margin-left: auto;
+    font-size: 0.82rem;
+    opacity: 0.85;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+
+  /* TABS */
+  .tab-nav {
+    background: rgba(0,0,0,0.18);
+    border-top: 1px solid rgba(255,255,255,0.12);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-nav-inner {
+    display: flex;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.72);
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .tab-btn:hover { color: white; }
+  .tab-btn.active {
+    color: white;
+    border-bottom-color: var(--accent);
+    background: rgba(255,255,255,0.08);
+  }
+
+  /* MAIN */
+  .main { max-width: 1100px; margin: 0 auto; padding: 22px 16px 40px; }
+
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .card-header {
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .card-header.primary { background: var(--primary); color: white; }
+  .card-header.secondary { background: var(--secondary); color: white; }
+  .card-header.accent { background: var(--accent); color: white; }
+  .card-header.dark { background: #2a2a2a; color: white; }
+  .card-header h2 {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  .card-body { padding: 16px 18px; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 15px;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.1s, opacity 0.2s;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-secondary { background: var(--secondary); color: white; }
+  .btn-secondary:hover { background: var(--secondary-dark); }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-accent:hover { background: var(--accent-dark); }
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+  }
+  .btn-outline:hover { background: var(--primary); color: white; }
+  .btn-danger { background: #e53e3e; color: white; }
+  .btn-danger:hover { background: #c53030; }
+  .btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+  .btn-ghost { background: rgba(255,255,255,0.15); color: white; }
+  .btn-ghost:hover { background: rgba(255,255,255,0.28); }
+
+  /* FORM */
+  .form-group { margin-bottom: 14px; }
+  .form-group label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-light);
+    margin-bottom: 5px;
+  }
+  .form-control {
+    width: 100%;
+    padding: 8px 11px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    color: var(--text);
+    background: white;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .form-control:focus { border-color: var(--primary); }
+  select.form-control { cursor: pointer; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,26,26,0.55);
+    z-index: 500;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 30px 10px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+    overflow: hidden;
+    animation: slideDown 0.22s ease;
+  }
+  @keyframes slideDown { from { transform: translateY(-16px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal-header {
+    padding: 14px 18px;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-header h3 { font-family: var(--font-serif); font-size: 1rem; }
+  .modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0 4px;
+    opacity: 0.85;
+    line-height: 1;
+  }
+  .modal-close:hover { opacity: 1; }
+  .modal-body { padding: 20px 18px; }
+  .modal-footer {
+    padding: 12px 18px;
+    background: #f8f4f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  th {
+    text-align: left;
+    padding: 8px 10px;
+    background: #f5ede5;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-light);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fef7f2; }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .badge-green { background: #d4f4ee; color: #1a6b5e; }
+  .badge-orange { background: #fde8dc; color: #a03310; }
+  .badge-yellow { background: #fef3cc; color: #7a5500; }
+  .badge-gray { background: #ebebeb; color: #666; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-yellow2 { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+
+  /* MESI PAGAMENTO - PULSANTINI */
+  .mesi-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .mese-btn {
+    padding: 3px 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font-sans);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .mese-btn.pagato { background: #d4f4ee; color: #1a6b5e; border-color: #3A9E8F; }
+  .mese-btn.sospeso { background: #fde8dc; color: #a03310; border-color: #E8522A; }
+  .mese-btn.non-dovuto { background: #ebebeb; color: #888; border-color: #ccc; }
+  .mese-btn.da-verificare { background: #fef9c3; color: #854d0e; border-color: #f59e0b; }
+  .mese-btn:hover { opacity: 0.75; }
+
+  /* FILTERS */
+  .filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .filters .form-control { width: auto; min-width: 150px; }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .stat-card {
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .stat-card .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-light);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .stat-card .value {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .stat-card .value.green { color: var(--secondary); }
+  .stat-card .value.orange { color: var(--primary); }
+  .stat-card .value.yellow { color: var(--accent-dark); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+  }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+  .empty-state p { font-size: 0.92rem; }
+
+  /* TOGGLE */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: #ccc;
+    border-radius: 22px;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    left: 3px; top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--secondary); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  /* RIEPILOGO COLORI */
+  .riepilogo-totale {
+    background: linear-gradient(135deg, var(--primary), #c94520);
+    color: white;
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .riepilogo-totale .label { font-size: 0.8rem; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.05em; }
+  .riepilogo-totale .value { font-family: var(--font-serif); font-size: 2.2rem; font-weight: 700; }
+
+  /* SCROLLABLE TABLE */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* NOTA */
+  .note-cell { font-size: 0.8rem; color: var(--text-light); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ACTION BAR */
+  .action-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  /* IMPOSTAZIONI SEZIONE */
+  .impost-section { margin-bottom: 24px; }
+  .impost-section h3 { font-family: var(--font-serif); font-size: 0.95rem; color: var(--secondary-dark); margin-bottom: 10px; font-weight: 700; }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #f0ebe5;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin: 2px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    .header-inner { padding: 10px 14px; }
+    .header-logo { height: 42px; }
+    .header-title h1 { font-size: 1.1rem; }
+    .main { padding: 14px 10px 40px; }
+    .card-body { padding: 12px; }
+    .tab-btn { padding: 9px 12px; font-size: 0.75rem; }
+  }
+
+  /* PRINT HIDE */
+  @media print { .app-header, .tab-nav, .action-bar, .btn { display: none !important; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="header-inner">
+    <img class="header-logo" src="Logo_scuola_musica.JPG" alt="SCMC Logo"
+         onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+    <div id="logo-fallback" style="display:none;width:52px;height:52px;background:rgba(255,255,255,0.2);border-radius:6px;align-items:center;justify-content:center;font-size:1.4rem;">🎵</div>
+    <div class="header-title">
+      <h1>SCMC</h1>
+      <p>Gestionale Scuola di Musica</p>
+    </div>
+    <div class="header-anno" id="header-anno"></div>
+  </div>
+  <nav class="tab-nav">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="switchTab('studenti')">🎓 Studenti</button>
+      <button class="tab-btn" onclick="switchTab('docenti')">👨‍🏫 Docenti</button>
+      <button class="tab-btn" onclick="switchTab('lezioni')">🎵 Lezioni</button>
+      <button class="tab-btn" onclick="switchTab('riepilogo')">📊 Riepilogo</button>
+      <button class="tab-btn" onclick="switchTab('impostazioni')">⚙️ Impostazioni</button>
+    </div>
+  </nav>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TAB STUDENTI -->
+  <div class="tab-pane active" id="tab-studenti">
+    <div class="card">
+      <div class="card-header primary">
+        <h2>🎓 Studenti</h2>
+        <div class="action-bar">
+          <select class="form-control" id="filtro-studenti" style="background:rgba(255,255,255,0.15);color:white;border-color:rgba(255,255,255,0.3);width:auto;" onchange="renderStudenti()">
+            <option value="">Tutti</option>
+            <option value="sospeso">Con sospesi</option>
+            <option value="da-verificare">Da verificare</option>
+            <option value="pagato">Tutti pagati</option>
+          </select>
+          <button class="btn btn-ghost" onclick="openModalStudente()">+ Aggiungi</button>
+        </div>
+      </div>
+      <div class="card-body" id="lista-studenti"></div>
+    </div>
+  </div>
+
+  <!-- TAB DOCENTI -->
+  <div class="tab-pane" id="tab-docenti">
+    <div class="card">
+      <div class="card-header secondary">
+        <h2>👨‍🏫 Docenti</h2>
+        <button class="btn btn-ghost" onclick="openModalDocente()">+ Aggiungi</button>
+      </div>
+      <div class="card-body" id="lista-docenti"></div>
+    </div>
+  </div>
+
+  <!-- TAB LEZIONI -->
+  <div class="tab-pane" id="tab-lezioni">
+    <div class="card">
+      <div class="card-header" style="background:var(--accent);color:white;">
+        <h2>🎵 Lezioni</h2>
+        <button class="btn btn-ghost" onclick="openModalLezione()">+ Aggiungi</button>
+      </div>
+      <div class="card-body">
+        <div class="filters">
+          <select class="form-control" id="filtro-lezione-docente" onchange="renderLezioni()">
+            <option value="">Tutti i docenti</option>
+          </select>
+          <select class="form-control" id="filtro-lezione-mese" onchange="renderLezioni()">
+            <option value="">Tutti i mesi</option>
+          </select>
+        </div>
+        <div id="lista-lezioni"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB RIEPILOGO -->
+  <div class="tab-pane" id="tab-riepilogo">
+    <div class="card">
+      <div class="card-header dark">
+        <h2>📊 Riepilogo Mensile</h2>
+        <select class="form-control" id="riepilogo-mese" style="background:rgba(255,255,255,0.12);color:white;border-color:rgba(255,255,255,0.3);width:auto;" onchange="renderRiepilogo()">
+        </select>
+      </div>
+      <div class="card-body" id="contenuto-riepilogo"></div>
+    </div>
+  </div>
+
+  <!-- TAB IMPOSTAZIONI -->
+  <div class="tab-pane" id="tab-impostazioni">
+    <div class="card">
+      <div class="card-header" style="background:#2a2a2a;color:white;">
+        <h2>⚙️ Impostazioni</h2>
+      </div>
+      <div class="card-body" id="contenuto-impostazioni"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL STUDENTE -->
+<div class="modal-overlay" id="modal-studente">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-studente-title">Nuovo Studente</h3>
+      <button class="modal-close" onclick="closeModal('modal-studente')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="studente-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome *</label>
+          <input type="text" class="form-control" id="s-nome" placeholder="Nome">
+        </div>
+        <div class="form-group">
+          <label>Cognome *</label>
+          <input type="text" class="form-control" id="s-cognome" placeholder="Cognome">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo Lezione</label>
+          <select class="form-control" id="s-tipo" onchange="aggiornaQuotaAuto()">
+            <option value="singola">Singola</option>
+            <option value="coppia">Coppia</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Durata</label>
+          <select class="form-control" id="s-durata">
+            <option value="45">45 min</option>
+            <option value="60">60 min</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Quota Mensile (€) <span id="quota-auto-hint" style="color:var(--secondary);font-weight:400;text-transform:none;letter-spacing:0;font-size:0.82rem;"></span></label>
+        <input type="number" class="form-control" id="s-quota" placeholder="130" min="0" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Strumento / Note</label>
+        <input type="text" class="form-control" id="s-strumento" placeholder="Es. Pianoforte, Chitarra…">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Debito pregresso (€) <span style="font-weight:400;text-transform:none;font-size:0.8rem;color:var(--text-light);">anni precedenti</span></label>
+          <input type="number" class="form-control" id="s-debito" placeholder="0" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Studente attivo a.s. corrente</label>
+          <select class="form-control" id="s-attivo" onchange="toggleMesiSection(this.value)">
+            <option value="si">Sì — ha mesi attivi</option>
+            <option value="no">No — solo debitore pregresso</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Quota iscrizione</label>
+          <select class="form-control" id="s-iscrizione-quota">
+            <option value="50">50€ (standard)</option>
+            <option value="25">25€ (fratello/sorella già iscritto)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Stato iscrizione</label>
+          <select class="form-control" id="s-iscrizione-stato">
+            <option value="non-pagata">Non pagata</option>
+            <option value="pagata">Pagata</option>
+          </select>
+        </div>
+      </div>
+      <div id="mesi-section">
+      <div class="form-group">
+        <label>Pagamenti mesi (click per cambiare stato)</label>
+        <div class="mesi-grid" id="modal-mesi-grid"></div>
+        <p style="font-size:0.75rem;color:var(--text-light);margin-top:6px;">Verde = Pagato &nbsp;|&nbsp; Arancio = Sospeso &nbsp;|&nbsp; Grigio = Non dovuto</p>
+      </div>
+      </div><!-- /mesi-section -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-studente')">Annulla</button>
+      <button class="btn btn-primary btn-sm" onclick="salvaStudente()">💾 Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DOCENTE -->
+<div class="modal-overlay" id="modal-docente">
+  <div class="modal">
+    <div class="modal-header" style="background:var(--secondary);">
+      <h3 id="modal-docente-title">Nuovo Docente</h3>
+      <button class="modal-close" onclick="closeModal('modal-docente')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="docente-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome *</label>
+          <input type="text" class="form-control" id="d-nome" placeholder="Nome">
+        </div>
+        <div class="form-group">
+          <label>Cognome *</label>
+          <input type="text" class="form-control" id="d-cognome" placeholder="Cognome">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Strumento insegnato</label>
+        <input type="text" class="form-control" id="d-strumento" placeholder="Es. Pianoforte">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Compenso/lezione (€)</label>
+          <input type="number" class="form-control" id="d-compenso" placeholder="25" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Rimborso spese (€/giorno)</label>
+          <input type="number" class="form-control" id="d-rimborso" placeholder="0" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Quota affitto mensile (€ versati alla scuola)</label>
+        <input type="number" class="form-control" id="d-affitto" placeholder="0" min="0" step="0.01">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-docente')">Annulla</button>
+      <button class="btn btn-secondary btn-sm" onclick="salvaDocente()">💾 Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LEZIONE -->
+<div class="modal-overlay" id="modal-lezione">
+  <div class="modal">
+    <div class="modal-header" style="background:var(--accent);">
+      <h3>Nuova Lezione</h3>
+      <button class="modal-close" onclick="closeModal('modal-lezione')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="lezione-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data *</label>
+          <input type="date" class="form-control" id="l-data">
+        </div>
+        <div class="form-group">
+          <label>Durata</label>
+          <select class="form-control" id="l-durata">
+            <option value="45">45 min</option>
+            <option value="60">60 min</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Docente *</label>
+        <select class="form-control" id="l-docente">
+          <option value="">— Seleziona docente —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Studente/i * <span style="font-weight:400;text-transform:none;font-size:0.8rem;color:var(--text-light);">(tieni premuto Ctrl/Cmd per selezionare più studenti)</span></label>
+        <select class="form-control" id="l-studenti" multiple style="height:100px;">
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Note</label>
+        <input type="text" class="form-control" id="l-note" placeholder="Opzionale">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-lezione')">Annulla</button>
+      <button class="btn btn-accent btn-sm" onclick="salvaLezione()">💾 Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VERIFICA SINCRONIZZAZIONE -->
+<div class="modal-overlay" id="modal-verifica">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-header" style="background:var(--accent);">
+      <h3>⬇️ Pagamenti dal Portale Mater Carmeli</h3>
+      <button class="modal-close" onclick="closeModal('modal-verifica')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.88rem;color:var(--text-light);margin-bottom:14px;">L'amministrazione ha registrato i seguenti pagamenti. Verificali e conferma quelli che hai effettivamente ricevuto.</p>
+      <div id="verifica-lista"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-verifica')">Chiudi</button>
+      <button class="btn btn-accent btn-sm" onclick="confermaTutti()">✅ Conferma tutti</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRM -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header" style="background:#e53e3e;">
+      <h3>Conferma</h3>
+      <button class="modal-close" onclick="closeModal('modal-confirm')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg" style="font-size:0.95rem;line-height:1.5;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-confirm')">Annulla</button>
+      <button class="btn btn-danger btn-sm" id="confirm-ok-btn">Elimina</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// DATA STORE
+// ================================================================
+const KEYS = {
+  studenti: 'scmc_studenti',
+  docenti: 'scmc_docenti',
+  lezioni: 'scmc_lezioni',
+  impostazioni: 'scmc_impostazioni'
+};
+
+const MESI = ['ott','nov','dic','gen','feb','mar','apr','mag'];
+const MESI_FULL = ['Ottobre','Novembre','Dicembre','Gennaio','Febbraio','Marzo','Aprile','Maggio'];
+const MESI_ISO = ['10','11','12','01','02','03','04','05']; // per confronto date
+
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || []; }
+  catch { return []; }
+}
+function loadObj(key, def={}) {
+  try { return JSON.parse(localStorage.getItem(key)) || def; }
+  catch { return def; }
+}
+function save(key, val) {
+  localStorage.setItem(key, JSON.stringify(val));
+}
+
+function getStudenti() { return load(KEYS.studenti); }
+function getDocenti() { return load(KEYS.docenti); }
+function getLezioni() { return load(KEYS.lezioni); }
+function getImpostazioni() {
+  return loadObj(KEYS.impostazioni, {
+    quotaSingola: 130,
+    quotaCoppia: 85,
+    quotaAmm45: 15,
+    quotaAmm30: 17.5,
+    annoScolastico: '2025/2026',
+    mesiAttivi: {ott:true,nov:true,dic:true,gen:true,feb:true,mar:true,apr:true,mag:true}
+  });
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function fmt(n) { return '€ ' + Number(n).toFixed(2).replace('.',','); }
+function nomeCompleto(p) { return p.nome + ' ' + p.cognome; }
+
+// ================================================================
+// TABS
+// ================================================================
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const idx = ['studenti','docenti','lezioni','riepilogo','impostazioni'].indexOf(name);
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  if (name === 'lezioni') { populateLezioneSelects(); renderLezioni(); }
+  if (name === 'riepilogo') { renderRiepilogo(); }
+  if (name === 'impostazioni') { renderImpostazioni(); }
+  if (name === 'docenti') { renderDocenti(); }
+  if (name === 'studenti') { renderStudenti(); }
+}
+
+// ================================================================
+// MODAL HELPERS
+// ================================================================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+function confirm_(msg, cb) {
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-ok-btn').onclick = () => { cb(); closeModal('modal-confirm'); };
+  openModal('modal-confirm');
+}
+
+// ================================================================
+// STUDENTI
+// ================================================================
+function calcolaQuotaDefault(tipo) {
+  const imp = getImpostazioni();
+  return tipo === 'coppia' ? imp.quotaCoppia : imp.quotaSingola;
+}
+
+function calcImportoRimanente(studente) {
+  const mesiAttivi = getImpostazioni().mesiAttivi;
+  let tot = Number(studente.debitoPregresso || 0);
+  if (studente.attivo !== 'no') {
+    MESI.forEach(m => {
+      if (mesiAttivi[m] && (studente.pagamenti[m] === 'sospeso' || studente.pagamenti[m] === 'da-verificare')) {
+        tot += Number(studente.quota || 0);
+      }
+    });
+  }
+  return tot;
+}
+
+function renderStudenti() {
+  const studenti = getStudenti();
+  const filtro = document.getElementById('filtro-studenti').value;
+  const el = document.getElementById('lista-studenti');
+
+  let lista = studenti;
+  if (filtro === 'sospeso') lista = studenti.filter(s => Object.values(s.pagamenti).includes('sospeso') || Object.values(s.pagamenti).includes('da-verificare') || Number(s.debitoPregresso||0) > 0);
+  if (filtro === 'pagato') lista = studenti.filter(s => !Object.values(s.pagamenti).includes('sospeso') && !Object.values(s.pagamenti).includes('da-verificare'));
+  if (filtro === 'da-verificare') lista = studenti.filter(s => Object.values(s.pagamenti).includes('da-verificare'));
+
+  if (lista.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">🎓</div><p>Nessuno studente trovato.<br>Clicca "+ Aggiungi" per iniziare.</p></div>`;
+    return;
+  }
+
+  const mesiAttivi = getImpostazioni().mesiAttivi;
+
+  el.innerHTML = `<div class="table-scroll"><table>
+    <thead><tr>
+      <th>Studente</th>
+      <th>Tipo</th>
+      <th>Quota</th>
+      <th>Pagamenti (${MESI.filter(m=>mesiAttivi[m]).map(m=>m.charAt(0).toUpperCase()+m.slice(1)).join(' · ')})</th>
+      <th>Iscrizione</th>
+      <th>Rimanente</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${lista.map(s => {
+      const rim = calcImportoRimanente(s);
+      const soloDebitore = s.attivo === 'no';
+      return `<tr ${soloDebitore ? 'style="opacity:0.75;background:#fdf5f0;"' : ''}>
+        <td>
+          <div style="font-weight:700;">${nomeCompleto(s)}${soloDebitore ? ' <span class="badge badge-gray" style="font-size:0.68rem;margin-left:4px;">non attivo</span>' : ''}</div>
+          ${s.strumento ? `<div style="font-size:0.78rem;color:var(--text-light);">${s.strumento}</div>` : ''}
+        </td>
+        <td><span class="badge ${s.tipo==='coppia'?'badge-blue':'badge-green'}">${s.tipo}</span></td>
+        <td style="font-weight:600;">${soloDebitore ? '—' : fmt(s.quota)}</td>
+        <td>
+          ${soloDebitore
+            ? `<span style="font-size:0.8rem;color:var(--text-light);">Solo debito pregresso a.s. precedente</span>`
+            : `<div class="mesi-grid">
+            ${MESI.filter(m=>mesiAttivi[m]).map(m => {
+              const stato = s.pagamenti[m] || 'non-dovuto';
+              const label = m.charAt(0).toUpperCase()+m.slice(1);
+              return '<button class="mese-btn ' + stato + '" onclick="togglePagamento(\'' + s.id + '\',\''+m+'\')" title="'+label+': '+stato+'">'+label+'</button>';
+            }).join('')}
+          </div>`
+          }
+        </td>
+        <td>
+          ${!soloDebitore ? `<span class="badge ${s.iscrizioneStato==='pagata'?'badge-green':'badge-red'}" style="cursor:pointer;font-size:0.78rem;" onclick="toggleIscrizione('${s.id}')" title="Click per cambiare stato iscrizione">
+            ${s.iscrizioneStato==='pagata' ? '✓' : '○'} ${fmt(s.iscrizioneQuota||50)}
+          </span>` : '<span style="color:#ccc">—</span>'}
+        </td>
+        <td>
+          <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start;">
+            ${s.debitoPregresso > 0 ? `<span class="badge badge-red" style="font-size:0.75rem;">preg. ${fmt(s.debitoPregresso)}</span>` : ''}
+            <span class="badge ${rim>0?'badge-orange':'badge-green'}" style="font-size:0.8rem;">tot. ${fmt(rim)}</span>
+          </div>
+        </td>
+        <td>
+          <div style="display:flex;gap:5px;justify-content:flex-end;">
+            <button class="btn btn-sm btn-outline" onclick="openModalStudente('${s.id}')">✏️</button>
+            <button class="btn btn-sm btn-danger" onclick="eliminaStudente('${s.id}')">🗑</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function togglePagamento(sid, mese) {
+  const studenti = getStudenti();
+  const s = studenti.find(x=>x.id===sid);
+  if (!s) return;
+  const ciclo = ['pagato','da-verificare','sospeso','non-dovuto'];
+  const cur = s.pagamenti[mese] || 'non-dovuto';
+  s.pagamenti[mese] = ciclo[(ciclo.indexOf(cur)+1) % ciclo.length];
+  save(KEYS.studenti, studenti);
+  renderStudenti();
+}
+
+function aggiornaQuotaAuto() {
+  const tipo = document.getElementById('s-tipo').value;
+  const quota = document.getElementById('s-quota');
+  const hint = document.getElementById('quota-auto-hint');
+  const def = calcolaQuotaDefault(tipo);
+  if (!quota.dataset.manuallyChanged) {
+    quota.value = def;
+  }
+  hint.textContent = `(default: ${def}€ per ${tipo})`;
+}
+
+let modalMesiStati = {};
+
+function toggleMesiSection(val) {
+  document.getElementById('mesi-section').style.display = val === 'no' ? 'none' : '';
+}
+
+function openModalStudente(id=null) {
+  document.getElementById('modal-studente-title').textContent = id ? 'Modifica Studente' : 'Nuovo Studente';
+  const mesiAttivi = getImpostazioni().mesiAttivi;
+  modalMesiStati = {};
+
+  if (id) {
+    const s = getStudenti().find(x=>x.id===id);
+    document.getElementById('studente-id').value = id;
+    document.getElementById('s-nome').value = s.nome;
+    document.getElementById('s-cognome').value = s.cognome;
+    document.getElementById('s-tipo').value = s.tipo;
+    document.getElementById('s-durata').value = s.durata || '45';
+    document.getElementById('s-quota').value = s.quota;
+    document.getElementById('s-quota').dataset.manuallyChanged = '1';
+    document.getElementById('s-strumento').value = s.strumento || '';
+    document.getElementById('s-debito').value = s.debitoPregresso || '';
+    document.getElementById('s-attivo').value = s.attivo || 'si';
+    document.getElementById('s-iscrizione-quota').value = s.iscrizioneQuota || 50;
+    document.getElementById('s-iscrizione-stato').value = s.iscrizioneStato || 'non-pagata';
+    toggleMesiSection(s.attivo || 'si');
+    modalMesiStati = {...s.pagamenti};
+  } else {
+    document.getElementById('studente-id').value = '';
+    document.getElementById('s-nome').value = '';
+    document.getElementById('s-cognome').value = '';
+    document.getElementById('s-tipo').value = 'singola';
+    document.getElementById('s-durata').value = '45';
+    document.getElementById('s-quota').value = getImpostazioni().quotaSingola;
+    document.getElementById('s-quota').dataset.manuallyChanged = '';
+    document.getElementById('s-strumento').value = '';
+    document.getElementById('s-debito').value = '';
+    document.getElementById('s-attivo').value = 'si';
+    document.getElementById('s-iscrizione-quota').value = '50';
+    document.getElementById('s-iscrizione-stato').value = 'non-pagata';
+    toggleMesiSection('si');
+    MESI.forEach(m => modalMesiStati[m] = mesiAttivi[m] ? 'sospeso' : 'non-dovuto');
+  }
+  renderModalMesi();
+  aggiornaQuotaAuto();
+  openModal('modal-studente');
+}
+
+function renderModalMesi() {
+  const mesiAttivi = getImpostazioni().mesiAttivi;
+  const grid = document.getElementById('modal-mesi-grid');
+  grid.innerHTML = MESI.map(m => {
+    const stato = modalMesiStati[m] || 'non-dovuto';
+    const label = MESI_FULL[MESI.indexOf(m)];
+    return `<button type="button" class="mese-btn ${stato}" onclick="toggleModalMese('${m}')">${label.slice(0,3)}</button>`;
+  }).join('');
+}
+
+function toggleModalMese(m) {
+  const ciclo = ['pagato','sospeso','non-dovuto'];
+  const cur = modalMesiStati[m] || 'non-dovuto';
+  modalMesiStati[m] = ciclo[(ciclo.indexOf(cur)+1) % ciclo.length];
+  renderModalMesi();
+}
+
+function salvaStudente() {
+  const nome = document.getElementById('s-nome').value.trim();
+  const cognome = document.getElementById('s-cognome').value.trim();
+  if (!nome || !cognome) { alert('Nome e cognome obbligatori'); return; }
+  const studenti = getStudenti();
+  const id = document.getElementById('studente-id').value || uid();
+  const dati = {
+    id, nome, cognome,
+    tipo: document.getElementById('s-tipo').value,
+    durata: document.getElementById('s-durata').value,
+    quota: parseFloat(document.getElementById('s-quota').value) || 0,
+    strumento: document.getElementById('s-strumento').value.trim(),
+    debitoPregresso: parseFloat(document.getElementById('s-debito').value) || 0,
+    attivo: document.getElementById('s-attivo').value,
+    iscrizioneQuota: parseFloat(document.getElementById('s-iscrizione-quota').value) || 50,
+    iscrizioneStato: document.getElementById('s-iscrizione-stato').value,
+    pagamenti: {...modalMesiStati}
+  };
+  const idx = studenti.findIndex(x=>x.id===id);
+  if (idx>=0) studenti[idx] = dati; else studenti.push(dati);
+  save(KEYS.studenti, studenti);
+  closeModal('modal-studente');
+  renderStudenti();
+}
+
+function eliminaStudente(id) {
+  confirm_('Eliminare definitivamente lo studente?', () => {
+    save(KEYS.studenti, getStudenti().filter(x=>x.id!==id));
+    renderStudenti();
+  });
+}
+
+function toggleIscrizione(sid) {
+  const studenti = getStudenti();
+  const s = studenti.find(x=>x.id===sid);
+  if (!s) return;
+  s.iscrizioneStato = s.iscrizioneStato === 'pagata' ? 'non-pagata' : 'pagata';
+  save(KEYS.studenti, studenti);
+  renderStudenti();
+}
+
+// ================================================================
+// DOCENTI
+// ================================================================
+function renderDocenti() {
+  const docenti = getDocenti();
+  const lezioni = getLezioni();
+  const el = document.getElementById('lista-docenti');
+
+  if (docenti.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">👨‍🏫</div><p>Nessun docente.<br>Clicca "+ Aggiungi" per iniziare.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="table-scroll"><table>
+    <thead><tr>
+      <th>Docente</th>
+      <th>Strumento</th>
+      <th>€/lezione</th>
+      <th>Rimb. spese</th>
+      <th>Affitto</th>
+      <th>Lezioni effettuate</th>
+      <th>Compenso totale</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${docenti.map(d => {
+      const lezD = lezioni.filter(l => l.docente === d.id);
+      const nLez = lezD.length;
+      const compTot = nLez * (d.compenso||0);
+      return `<tr>
+        <td><div style="font-weight:700;">${nomeCompleto(d)}</div></td>
+        <td>${d.strumento||'—'}</td>
+        <td style="font-weight:600;">${fmt(d.compenso||0)}</td>
+        <td>${d.rimborso ? fmt(d.rimborso)+'/g' : '—'}</td>
+        <td>${d.affitto ? fmt(d.affitto)+'/mese' : '—'}</td>
+        <td><span class="badge badge-blue">${nLez}</span></td>
+        <td style="font-weight:700;color:var(--primary);">${fmt(compTot)}</td>
+        <td>
+          <div style="display:flex;gap:5px;justify-content:flex-end;">
+            <button class="btn btn-sm btn-outline" onclick="openModalDocente('${d.id}')">✏️</button>
+            <button class="btn btn-sm btn-danger" onclick="eliminaDocente('${d.id}')">🗑</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function openModalDocente(id=null) {
+  document.getElementById('modal-docente-title').textContent = id ? 'Modifica Docente' : 'Nuovo Docente';
+  if (id) {
+    const d = getDocenti().find(x=>x.id===id);
+    document.getElementById('docente-id').value = id;
+    document.getElementById('d-nome').value = d.nome;
+    document.getElementById('d-cognome').value = d.cognome;
+    document.getElementById('d-strumento').value = d.strumento||'';
+    document.getElementById('d-compenso').value = d.compenso||'';
+    document.getElementById('d-rimborso').value = d.rimborso||'';
+    document.getElementById('d-affitto').value = d.affitto||'';
+  } else {
+    ['docente-id','d-nome','d-cognome','d-strumento','d-compenso','d-rimborso','d-affitto'].forEach(id => document.getElementById(id).value='');
+  }
+  openModal('modal-docente');
+}
+
+function salvaDocente() {
+  const nome = document.getElementById('d-nome').value.trim();
+  const cognome = document.getElementById('d-cognome').value.trim();
+  if (!nome || !cognome) { alert('Nome e cognome obbligatori'); return; }
+  const docenti = getDocenti();
+  const id = document.getElementById('docente-id').value || uid();
+  const dati = {
+    id, nome, cognome,
+    strumento: document.getElementById('d-strumento').value.trim(),
+    compenso: parseFloat(document.getElementById('d-compenso').value)||0,
+    rimborso: parseFloat(document.getElementById('d-rimborso').value)||0,
+    affitto: parseFloat(document.getElementById('d-affitto').value)||0
+  };
+  const idx = docenti.findIndex(x=>x.id===id);
+  if (idx>=0) docenti[idx]=dati; else docenti.push(dati);
+  save(KEYS.docenti, docenti);
+  closeModal('modal-docente');
+  renderDocenti();
+}
+
+function eliminaDocente(id) {
+  confirm_('Eliminare definitivamente il docente? Le lezioni associate rimarranno.', () => {
+    save(KEYS.docenti, getDocenti().filter(x=>x.id!==id));
+    renderDocenti();
+  });
+}
+
+// ================================================================
+// LEZIONI
+// ================================================================
+function populateLezioneSelects() {
+  const docenti = getDocenti();
+  const studenti = getStudenti();
+  const mesiAttivi = getImpostazioni().mesiAttivi;
+
+  // Filtro docente
+  const selDocFiltro = document.getElementById('filtro-lezione-docente');
+  const curDocFiltro = selDocFiltro.value;
+  selDocFiltro.innerHTML = '<option value="">Tutti i docenti</option>' +
+    docenti.map(d=>`<option value="${d.id}">${nomeCompleto(d)}</option>`).join('');
+  selDocFiltro.value = curDocFiltro;
+
+  // Filtro mese
+  const selMeseFiltro = document.getElementById('filtro-lezione-mese');
+  const curMeseFiltro = selMeseFiltro.value;
+  selMeseFiltro.innerHTML = '<option value="">Tutti i mesi</option>' +
+    MESI.filter(m=>mesiAttivi[m]).map((m,i)=>`<option value="${m}">${MESI_FULL[MESI.indexOf(m)]}</option>`).join('');
+  selMeseFiltro.value = curMeseFiltro;
+
+  // Modal selects
+  const selDoc = document.getElementById('l-docente');
+  const selStud = document.getElementById('l-studenti');
+  selDoc.innerHTML = '<option value="">— Seleziona docente —</option>' +
+    docenti.map(d=>`<option value="${d.id}">${nomeCompleto(d)} (${d.strumento||'—'})</option>`).join('');
+  selStud.innerHTML = studenti.map(s=>`<option value="${s.id}">${nomeCompleto(s)} (${s.strumento||s.tipo})</option>`).join('');
+}
+
+function dataToMese(dateStr) {
+  // dateStr: YYYY-MM-DD
+  const m = dateStr.substring(5,7);
+  const idx = MESI_ISO.indexOf(m);
+  return idx>=0 ? MESI[idx] : null;
+}
+
+function renderLezioni() {
+  const lezioni = getLezioni();
+  const docenti = getDocenti();
+  const studenti = getStudenti();
+  const filtroDoc = document.getElementById('filtro-lezione-docente').value;
+  const filtroMese = document.getElementById('filtro-lezione-mese').value;
+  const el = document.getElementById('lista-lezioni');
+
+  let lista = [...lezioni].sort((a,b)=>b.data.localeCompare(a.data));
+  if (filtroDoc) lista = lista.filter(l=>l.docente===filtroDoc);
+  if (filtroMese) lista = lista.filter(l=>dataToMese(l.data)===filtroMese);
+
+  if (lista.length===0) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">🎵</div><p>Nessuna lezione trovata.</p></div>`;
+    return;
+  }
+
+  const docMap = Object.fromEntries(docenti.map(d=>[d.id,d]));
+  const studMap = Object.fromEntries(studenti.map(s=>[s.id,s]));
+
+  el.innerHTML = `<div class="table-scroll"><table>
+    <thead><tr>
+      <th>Data</th>
+      <th>Docente</th>
+      <th>Studenti</th>
+      <th>Durata</th>
+      <th>Note</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${lista.map(l => {
+      const doc = docMap[l.docente];
+      const studs = (l.studenti||[]).map(sid=>studMap[sid]?nomeCompleto(studMap[sid]):'?').join(', ');
+      const dataFmt = l.data ? new Date(l.data+'T00:00:00').toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      return `<tr>
+        <td style="font-weight:600;white-space:nowrap;">${dataFmt}</td>
+        <td>${doc ? nomeCompleto(doc) : '<span style="color:#ccc">—</span>'}</td>
+        <td>${studs||'—'}</td>
+        <td><span class="badge badge-gray">${l.durata||'45'} min</span></td>
+        <td class="note-cell">${l.note||'—'}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="eliminaLezione('${l.id}')">🗑</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function openModalLezione() {
+  populateLezioneSelects();
+  document.getElementById('lezione-id').value = '';
+  document.getElementById('l-data').value = new Date().toISOString().slice(0,10);
+  document.getElementById('l-docente').value = '';
+  document.getElementById('l-durata').value = '45';
+  document.getElementById('l-note').value = '';
+  // deselect all students
+  const sel = document.getElementById('l-studenti');
+  for (let o of sel.options) o.selected = false;
+  openModal('modal-lezione');
+}
+
+function salvaLezione() {
+  const data = document.getElementById('l-data').value;
+  const docente = document.getElementById('l-docente').value;
+  if (!data || !docente) { alert('Data e docente obbligatori'); return; }
+  const sel = document.getElementById('l-studenti');
+  const studenti = Array.from(sel.selectedOptions).map(o=>o.value);
+  if (studenti.length===0) { alert('Seleziona almeno uno studente'); return; }
+  const lezioni = getLezioni();
+  const id = document.getElementById('lezione-id').value || uid();
+  const dati = {
+    id, data, docente, studenti,
+    durata: document.getElementById('l-durata').value,
+    note: document.getElementById('l-note').value.trim()
+  };
+  const idx = lezioni.findIndex(x=>x.id===id);
+  if (idx>=0) lezioni[idx]=dati; else lezioni.push(dati);
+  save(KEYS.lezioni, lezioni);
+  closeModal('modal-lezione');
+  renderLezioni();
+}
+
+function eliminaLezione(id) {
+  confirm_('Eliminare questa lezione?', () => {
+    save(KEYS.lezioni, getLezioni().filter(x=>x.id!==id));
+    renderLezioni();
+  });
+}
+
+// ================================================================
+// RIEPILOGO
+// ================================================================
+function initRiepilogoMese() {
+  const sel = document.getElementById('riepilogo-mese');
+  const mesiAttivi = getImpostazioni().mesiAttivi;
+  sel.innerHTML = MESI.filter(m=>mesiAttivi[m])
+    .map((m,i)=>`<option value="${m}">${MESI_FULL[MESI.indexOf(m)]}</option>`).join('');
+  // default: mese corrente o primo disponibile
+  const now = new Date();
+  const curM = now.getMonth()+1; // 1-12
+  const meseCorr = MESI_ISO.findIndex(x=>parseInt(x)===curM);
+  if (meseCorr>=0 && mesiAttivi[MESI[meseCorr]]) sel.value = MESI[meseCorr];
+}
+
+function renderRiepilogo() {
+  const mese = document.getElementById('riepilogo-mese').value;
+  if (!mese) return;
+  const studenti = getStudenti();
+  const docenti = getDocenti();
+  const lezioni = getLezioni();
+  const imp = getImpostazioni();
+  const mIdx = MESI.indexOf(mese);
+  const meseFull = MESI_FULL[mIdx];
+  const isoM = MESI_ISO[mIdx];
+
+  // Lezioni del mese
+  const lezioniMese = lezioni.filter(l => {
+    const m = l.data ? l.data.substring(5,7) : null;
+    return m === isoM;
+  });
+
+  // Incassato studenti
+  let totIncassato = 0;
+  let totIscrizioni = 0;
+  const detStudenti = studenti.map(s => {
+    const pagato = s.pagamenti[mese] === 'pagato'; // da-verificare NON conta come incassato
+    const dovuto = s.pagamenti[mese] !== 'non-dovuto';
+    if (pagato) totIncassato += Number(s.quota||0);
+    // Iscrizioni conteggiate in ottobre
+    if (mese === 'ott' && s.iscrizioneStato === 'pagata' && s.attivo !== 'no') {
+      totIscrizioni += Number(s.iscrizioneQuota||50);
+    }
+    return { ...s, statoPagamento: s.pagamenti[mese]||'non-dovuto', dovuto };
+  }).filter(s=>s.dovuto);
+
+  // Compensi docenti
+  let totCompensati = 0;
+  let totAffitti = 0;
+  const detDocenti = docenti.map(d => {
+    const lezD = lezioniMese.filter(l=>l.docente===d.id);
+    const nLez = lezD.length;
+    const comp = nLez * (d.compenso||0);
+    totCompensati += comp;
+    totAffitti += Number(d.affitto||0);
+    return { ...d, nLez, comp };
+  });
+
+  const utile = totIncassato + totIscrizioni + totAffitti - totCompensati;
+  const el = document.getElementById('contenuto-riepilogo');
+
+  el.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="label">📥 Incassato studenti</div>
+        <div class="value green">${fmt(totIncassato)}</div>
+      </div>
+      ${mese === 'ott' ? `<div class="stat-card">
+        <div class="label">📋 Iscrizioni</div>
+        <div class="value green">${fmt(totIscrizioni)}</div>
+      </div>` : ''}
+      <div class="stat-card">
+        <div class="label">🏠 Affitti docenti</div>
+        <div class="value yellow">${fmt(totAffitti)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">📤 Compensi docenti</div>
+        <div class="value orange">${fmt(totCompensati)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">✨ Utile netto</div>
+        <div class="value" style="color:${utile>=0?'var(--secondary)':'#e53e3e'}">${fmt(utile)}</div>
+      </div>
+    </div>
+
+    <div class="action-bar" style="margin-bottom:16px;">
+      <button class="btn btn-primary btn-sm" onclick="esportaCSV('${mese}')">📊 Esporta CSV</button>
+      <button class="btn btn-secondary btn-sm" onclick="esportaPrimaNota('${mese}')">🔗 Esporta in Prima Nota</button>
+    </div>
+
+    ${_ultimiConfermati.length > 0 ? (() => {
+      const amm45 = Number(imp.quotaAmm45||15);
+      const amm30 = Number(imp.quotaAmm30||17.5);
+      const studMap = Object.fromEntries(studenti.map(s=>[s.id,s]));
+      // Raggruppa per studente
+      const perStudente = {};
+      _ultimiConfermati.filter(v=>v.tipo==='mese').forEach(v => {
+        const s = studMap[v.studenteId];
+        if (!s) return;
+        if (!perStudente[v.studenteId]) perStudente[v.studenteId] = { s, voci: [] };
+        perStudente[v.studenteId].voci.push(v);
+      });
+      const righe = Object.values(perStudente).map(({s, voci}) => {
+        const quotaAmm = String(s.durata)==='30' ? amm30 : amm45;
+        const nMesi = voci.length;
+        const totAmm = quotaAmm * nMesi;
+        const totNetto = (Number(s.quota||0) - quotaAmm) * nMesi;
+        return { s, voci, quotaAmm, nMesi, totAmm, totNetto };
+      });
+      if (righe.length === 0) return '';
+      const totMesi = righe.reduce((a,r)=>a+r.nMesi,0);
+      const totAmm = righe.reduce((a,r)=>a+r.totAmm,0);
+      const totNetto = righe.reduce((a,r)=>a+r.totNetto,0);
+      return `
+        <div class="section-title" style="color:var(--secondary);">✅ Pagamenti appena confermati</div>
+        <div style="font-size:0.8rem;color:var(--text-light);margin-bottom:10px;">Questa griglia sparisce al prossimo cambio di mese o ricarica della pagina.</div>
+        <div class="table-scroll" style="margin-bottom:20px;">
+          <table>
+            <thead><tr>
+              <th>Studente</th>
+              <th style="text-align:center;">Quota</th>
+              <th style="text-align:center;">Mesi confermati</th>
+              <th style="text-align:center;">Quota Mater Carmeli</th>
+              <th style="text-align:right;">Netto a te</th>
+            </tr></thead>
+            <tbody>
+              ${righe.map(({s, voci, quotaAmm, nMesi, totAmm, totNetto}) => `
+                <tr>
+                  <td style="font-weight:600;">${nomeCompleto(s)}
+                    <div style="font-size:0.75rem;color:var(--text-light);">${voci.map(v=>MESI_FULL[MESI.indexOf(v.mese)]).join(', ')}</div>
+                  </td>
+                  <td style="text-align:center;">${fmt(s.quota)}</td>
+                  <td style="text-align:center;"><span class="badge badge-green">${nMesi}</span></td>
+                  <td style="text-align:center;color:var(--text-light);">${fmt(quotaAmm)} × ${nMesi} = <strong>${fmt(totAmm)}</strong></td>
+                  <td style="text-align:right;font-weight:700;color:var(--secondary);">${fmt(totNetto)}</td>
+                </tr>`).join('')}
+              <tr style="background:#f0faf8;border-top:2px solid var(--secondary);">
+                <td style="font-weight:700;font-family:var(--font-serif);">TOTALE</td>
+                <td></td>
+                <td style="text-align:center;font-weight:700;">${totMesi}</td>
+                <td style="text-align:center;font-weight:700;">${fmt(totAmm)}</td>
+                <td style="text-align:right;font-weight:700;font-size:1.05rem;color:var(--secondary);">${fmt(totNetto)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>`;
+    })() : ''}
+
+    <div class="section-title">📊 Storico per Strumento — Anno ${imp.annoScolastico}</div>
+    <div class="table-scroll" style="margin-bottom:20px;">
+      ${(() => {
+        const amm45 = Number(imp.quotaAmm45||15);
+        const amm30 = Number(imp.quotaAmm30||17.5);
+        const mesiAttivi = Object.entries(imp.mesiAttivi||{}).filter(([m,v])=>v).map(([m])=>m);
+        const strumenti = [...new Set(studenti.filter(s=>s.attivo!=='no').map(s=>s.strumento||'Altro'))].sort();
+        return `<table>
+          <thead>
+            <tr>
+              <th>Strumento</th>
+              ${mesiAttivi.map(m=>`<th style="text-align:center;">${MESI_FULL[MESI.indexOf(m)].slice(0,3)}</th>`).join('')}
+              <th style="text-align:right;">Totale netto</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${strumenti.map(str => {
+              const studStr = studenti.filter(s=>s.attivo!=='no'&&(s.strumento||'Altro')===str);
+              const meseNetti = mesiAttivi.map(m => {
+                return studStr.reduce((tot, s) => {
+                  if (s.pagamenti[m] !== 'pagato') return tot;
+                  const amm = String(s.durata)==='30' ? amm30 : amm45;
+                  return tot + Number(s.quota||0) - amm;
+                }, 0);
+              });
+              const totStr = meseNetti.reduce((a,n)=>a+n,0);
+              return `<tr>
+                <td style="font-weight:700;">${str}</td>
+                ${meseNetti.map(n=>`<td style="text-align:center;font-size:0.85rem;color:${n>0?'var(--secondary)':'var(--text-light)'};">${n>0?fmt(n):'—'}</td>`).join('')}
+                <td style="text-align:right;font-weight:700;color:var(--secondary);">${fmt(totStr)}</td>
+              </tr>`;
+            }).join('')}
+            <tr style="background:#f5ede5;border-top:2px solid var(--primary);">
+              <td style="font-weight:700;font-family:var(--font-serif);">TOTALE</td>
+              ${mesiAttivi.map(m => {
+                const n = studenti.filter(s=>s.attivo!=='no').reduce((tot,s) => {
+                  if (s.pagamenti[m]!=='pagato') return tot;
+                  const amm = String(s.durata)==='30'?amm30:amm45;
+                  return tot + Number(s.quota||0) - amm;
+                },0);
+                return `<td style="text-align:center;font-weight:700;font-size:0.85rem;">${n>0?fmt(n):'—'}</td>`;
+              }).join('')}
+              <td style="text-align:right;font-weight:700;font-size:1.05rem;color:var(--secondary);">${fmt(
+                studenti.filter(s=>s.attivo!=='no').reduce((tot,s)=>{
+                  const amm=String(s.durata)==='30'?amm30:amm45;
+                  return tot + MESI.filter(m=>s.pagamenti[m]==='pagato').length*(Number(s.quota||0)-amm);
+                },0)
+              )}</td>
+            </tr>
+          </tbody>
+        </table>`;
+      })()}
+    </div>
+
+    <div class="section-title">Dettaglio Studenti — ${meseFull}</div>
+    <div class="table-scroll" style="margin-bottom:20px;">
+      <table>
+        <thead><tr><th>Studente</th><th>Tipo</th><th>Quota</th><th>Stato</th>${mese==='ott'?'<th>Iscrizione</th>':''}</tr></thead>
+        <tbody>${detStudenti.length===0 ? '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:16px;">Nessuno studente con quota dovuta</td></tr>' :
+          detStudenti.map(s=>`<tr>
+            <td style="font-weight:600;">${nomeCompleto(s)}</td>
+            <td>${s.tipo}</td>
+            <td>${fmt(s.quota)}</td>
+            <td><span class="badge ${s.statoPagamento==='pagato'?'badge-green':s.statoPagamento==='sospeso'?'badge-orange':'badge-gray'}">${s.statoPagamento}</span></td>
+            ${mese==='ott' && s.attivo!=='no' ? `<td><span class="badge ${s.iscrizioneStato==='pagata'?'badge-green':'badge-red'}">${s.iscrizioneStato||'non-pagata'} (${fmt(s.iscrizioneQuota||50)})</span></td>` : mese==='ott'?'<td>—</td>':''}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-title">Dettaglio Docenti — ${meseFull}</div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Docente</th><th>Lezioni</th><th>Compenso</th><th>Affitto</th></tr></thead>
+        <tbody>${detDocenti.length===0 ? '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:16px;">Nessun docente registrato</td></tr>' :
+          detDocenti.map(d=>`<tr>
+            <td style="font-weight:600;">${nomeCompleto(d)}</td>
+            <td><span class="badge badge-blue">${d.nLez}</span></td>
+            <td style="font-weight:600;">${fmt(d.comp)}</td>
+            <td>${d.affitto ? fmt(d.affitto) : '—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function esportaCSV(mese) {
+  const mIdx = MESI.indexOf(mese);
+  const meseFull = MESI_FULL[mIdx];
+  const isoM = MESI_ISO[mIdx];
+  const studenti = getStudenti();
+  const docenti = getDocenti();
+  const lezioni = getLezioni();
+  const imp = getImpostazioni();
+
+  const lezioniMese = lezioni.filter(l => l.data && l.data.substring(5,7)===isoM);
+
+  let csv = `SCMC – Riepilogo ${meseFull} (${imp.annoScolastico})\n\n`;
+  csv += 'STUDENTI\nNome,Cognome,Tipo,Quota,Stato Pagamento\n';
+  studenti.filter(s=>s.pagamenti[mese]!=='non-dovuto').forEach(s=>{
+    csv += `"${s.nome}","${s.cognome}","${s.tipo}","${s.quota}","${s.pagamenti[mese]||''}"\n`;
+  });
+  csv += '\nDOCENTI\nNome,Cognome,Strumento,N° Lezioni,Compenso Totale,Affitto\n';
+  docenti.forEach(d=>{
+    const nLez = lezioniMese.filter(l=>l.docente===d.id).length;
+    const comp = nLez * (d.compenso||0);
+    csv += `"${d.nome}","${d.cognome}","${d.strumento||''}","${nLez}","${comp}","${d.affitto||0}"\n`;
+  });
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SCMC_${meseFull}_${imp.annoScolastico.replace('/','_')}.csv`;
+  a.click();
+}
+
+function esportaPrimaNota(mese) {
+  const mIdx = MESI.indexOf(mese);
+  const meseFull = MESI_FULL[mIdx];
+  const isoM = MESI_ISO[mIdx];
+  const studenti = getStudenti();
+  const docenti = getDocenti();
+  const lezioni = getLezioni();
+  const imp = getImpostazioni();
+  const lezioniMese = lezioni.filter(l => l.data && l.data.substring(5,7)===isoM);
+
+  // Anno dedotto: se mese ottobre/nov/dic usa primo anno, altrimenti secondo
+  const anni = imp.annoScolastico.split('/');
+  const annoMese = ['10','11','12'].includes(isoM) ? anni[0] : (anni[1]||anni[0]);
+  const dataRef = `${annoMese}-${isoM}-01`;
+
+  const movimenti = [];
+  // Entrate: quote studenti pagate
+  studenti.filter(s=>s.pagamenti[mese]==='pagato').forEach(s=>{
+    movimenti.push({
+      data: dataRef,
+      tipo: 'entrata',
+      descrizione: `Quota ${meseFull} – ${nomeCompleto(s)} (${s.tipo})`,
+      importo: Number(s.quota||0),
+      categoria: 'Quote studenti',
+      note: `Anno ${imp.annoScolastico}`
+    });
+  });
+  // Entrate: affitti docenti
+  docenti.filter(d=>d.affitto>0).forEach(d=>{
+    movimenti.push({
+      data: dataRef,
+      tipo: 'entrata',
+      descrizione: `Affitto ${meseFull} – ${nomeCompleto(d)}`,
+      importo: Number(d.affitto),
+      categoria: 'Affitto docenti',
+      note: ''
+    });
+  });
+  // Uscite: compensi docenti
+  docenti.forEach(d=>{
+    const nLez = lezioniMese.filter(l=>l.docente===d.id).length;
+    if (nLez>0) {
+      movimenti.push({
+        data: dataRef,
+        tipo: 'uscita',
+        descrizione: `Compenso ${meseFull} – ${nomeCompleto(d)} (${nLez} lezioni)`,
+        importo: nLez * (d.compenso||0),
+        categoria: 'Compensi docenti',
+        note: `${nLez} lezioni × €${d.compenso}`
+      });
+    }
+  });
+
+  const json = JSON.stringify(movimenti, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SCMC_PrimaNota_${meseFull}_${imp.annoScolastico.replace('/','_')}.json`;
+  a.click();
+  alert(`Esportati ${movimenti.length} movimenti.\nImporta questo file in Viviamol'Arte tramite la funzione "Importa da Form".`);
+}
+
+// ================================================================
+// IMPOSTAZIONI
+// ================================================================
+function renderImpostazioni() {
+  const imp = getImpostazioni();
+  const el = document.getElementById('contenuto-impostazioni');
+  const jbCfg = getJsonBinConfig();
+  el.innerHTML = `
+    <div class="impost-section">
+      <h3>💶 Tariffe</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Quota mensile – Lezione singola (€)</label>
+          <input type="number" class="form-control" id="imp-singola" value="${imp.quotaSingola}" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Quota mensile – Lezione coppia per bambino (€)</label>
+          <input type="number" class="form-control" id="imp-coppia" value="${imp.quotaCoppia}" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Quota Mater Carmeli – Lezione 45 min (€/mese)</label>
+          <input type="number" class="form-control" id="imp-amm-singola" value="${imp.quotaAmm45||15}" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Quota Mater Carmeli – Lezione 30 min (€/mese)</label>
+          <input type="number" class="form-control" id="imp-amm-coppia" value="${imp.quotaAmm30||17.5}" min="0" step="0.01">
+        </div>
+      </div>
+    </div>
+    <div class="impost-section">
+      <h3>🎓 Anno Scolastico</h3>
+      <div class="form-group" style="max-width:240px;">
+        <label>Anno scolastico</label>
+        <input type="text" class="form-control" id="imp-anno" value="${imp.annoScolastico}" placeholder="2025/2026">
+      </div>
+    </div>
+    <div class="impost-section">
+      <h3>📅 Mesi Attivi</h3>
+      ${MESI.map((m,i)=>`
+        <div class="toggle-row">
+          <span>${MESI_FULL[i]}</span>
+          <label class="toggle">
+            <input type="checkbox" id="imp-mese-${m}" ${imp.mesiAttivi[m]?'checked':''}>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      `).join('')}
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;margin-bottom:30px;">
+      <button class="btn btn-primary" onclick="salvaImpostazioni()">💾 Salva Impostazioni</button>
+    </div>
+    <div class="impost-section">
+      <h3>🌐 Portale Pagamenti (Mater Carmeli)</h3>
+      <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:10px;">
+        Collega il gestionale a JSONBin per sincronizzare i pagamenti con il portale dell'amministrazione.
+      </p>
+      <div class="form-row" style="margin-bottom:10px;">
+        <div class="form-group">
+          <label>Master Key JSONBin</label>
+          <input type="text" class="form-control" id="imp-jsonbin-key" placeholder="$2a$10$…" value="${jbCfg.masterKey||''}">
+        </div>
+        <div class="form-group">
+          <label>Bin ID</label>
+          <input type="text" class="form-control" id="imp-jsonbin-bid" placeholder="64abc123…" value="${jbCfg.binId||''}">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="salvaConfigJsonBin()">💾 Salva credenziali</button>
+        <button class="btn btn-secondary btn-sm" onclick="pubblicaSuJsonBin()">⬆️ Pubblica dati sul portale</button>
+        <button class="btn btn-accent btn-sm" onclick="sincronizzaDaJsonBin()">⬇️ Sincronizza pagamenti dal portale</button>
+      </div>
+      <div id="jsonbin-status" style="margin-top:10px;font-size:0.82rem;color:var(--text-light);"></div>
+    </div>
+    <div class="impost-section">
+      <h3>🔧 Backup e Ripristino</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="backupJSON()">⬇️ Backup JSON</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-file').click()">⬆️ Ripristina JSON</button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="ripristinaJSON(event)">
+        <button class="btn btn-danger btn-sm" onclick="resetDati()">⚠️ Reset completo</button>
+      </div>
+    </div>
+  `;
+}
+
+function salvaImpostazioni() {
+  const mesiAttivi = {};
+  MESI.forEach(m => mesiAttivi[m] = document.getElementById('imp-mese-'+m).checked);
+  const imp = {
+    quotaSingola: parseFloat(document.getElementById('imp-singola').value)||130,
+    quotaCoppia: parseFloat(document.getElementById('imp-coppia').value)||85,
+    quotaAmm45: parseFloat(document.getElementById('imp-amm-singola').value)||15,
+    quotaAmm30: parseFloat(document.getElementById('imp-amm-coppia').value)||17.5,
+    annoScolastico: document.getElementById('imp-anno').value.trim()||'2025/2026',
+    mesiAttivi
+  };
+  save(KEYS.impostazioni, imp);
+  document.getElementById('header-anno').textContent = imp.annoScolastico;
+  initRiepilogoMese();
+  alert('Impostazioni salvate ✓');
+}
+
+function backupJSON() {
+  const backup = {
+    studenti: getStudenti(),
+    docenti: getDocenti(),
+    lezioni: getLezioni(),
+    impostazioni: getImpostazioni(),
+    esportato: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SCMC_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function ripristinaJSON(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const d = JSON.parse(e.target.result);
+      if (d.studenti) save(KEYS.studenti, d.studenti);
+      if (d.docenti) save(KEYS.docenti, d.docenti);
+      if (d.lezioni) save(KEYS.lezioni, d.lezioni);
+      if (d.impostazioni) save(KEYS.impostazioni, d.impostazioni);
+      alert('Ripristino completato ✓ Ricarica la pagina per vedere i dati aggiornati.');
+      location.reload();
+    } catch { alert('File JSON non valido'); }
+  };
+  r.readAsText(file);
+  ev.target.value='';
+}
+
+function resetDati() {
+  confirm_('Eliminare TUTTI i dati? Questa azione è irreversibile.', () => {
+    [KEYS.studenti, KEYS.docenti, KEYS.lezioni].forEach(k => localStorage.removeItem(k));
+    location.reload();
+  });
+}
+
+// ================================================================
+// JSONBIN SYNC
+// ================================================================
+const JSONBIN_BASE_SCMC = 'https://api.jsonbin.io/v3';
+const CFG_JSONBIN_KEY = 'scmc_jsonbin_config';
+
+function getJsonBinConfig() {
+  try { return JSON.parse(localStorage.getItem(CFG_JSONBIN_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function salvaConfigJsonBin() {
+  const mk = document.getElementById('imp-jsonbin-key').value.trim();
+  const bid = document.getElementById('imp-jsonbin-bid').value.trim();
+  if (!mk || !bid) { alert('Inserisci Master Key e Bin ID'); return; }
+  localStorage.setItem(CFG_JSONBIN_KEY, JSON.stringify({ masterKey: mk, binId: bid }));
+  document.getElementById('jsonbin-status').textContent = '✓ Credenziali salvate';
+}
+
+async function pubblicaSuJsonBin() {
+  const cfg = getJsonBinConfig();
+  if (!cfg.masterKey || !cfg.binId) { alert('Configura prima Master Key e Bin ID'); return; }
+  const status = document.getElementById('jsonbin-status');
+  status.textContent = '⏳ Pubblicazione in corso…';
+  try {
+    const payload = {
+      studenti: getStudenti(),
+      ultimoAggiornamento: new Date().toISOString(),
+      fonte: 'SCMC Gestionale'
+    };
+    const r = await fetch(`${JSONBIN_BASE_SCMC}/b/${cfg.binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': cfg.masterKey },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    status.textContent = '✅ Dati pubblicati sul portale — ' + new Date().toLocaleTimeString('it-IT');
+  } catch(e) {
+    status.textContent = '❌ Errore: ' + e.message;
+  }
+}
+
+let _pendingVerifica = []; // cache dei cambiamenti da verificare
+let _ultimiConfermati = []; // pagamenti confermati nell'ultima sessione di sync
+
+async function sincronizzaDaJsonBin() {
+  const cfg = getJsonBinConfig();
+  if (!cfg.masterKey || !cfg.binId) { alert('Configura prima Master Key e Bin ID'); return; }
+  const status = document.getElementById('jsonbin-status');
+  status.textContent = '⏳ Sincronizzazione in corso…';
+  try {
+    const r = await fetch(`${JSONBIN_BASE_SCMC}/b/${cfg.binId}/latest`, {
+      headers: { 'X-Master-Key': cfg.masterKey }
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const json = await r.json();
+    const remoti = json.record;
+    if (!remoti || !remoti.studenti) throw new Error('Dati non validi');
+
+    const locali = getStudenti();
+    const cambiamenti = [];
+
+    remoti.studenti.forEach(sr => {
+      const loc = locali.find(l => l.id === sr.id);
+      if (!loc) return;
+
+      // Pagamenti mese per mese: sospeso → da-verificare
+      Object.entries(sr.pagamenti || {}).forEach(([m, v]) => {
+        if (v === 'pagato' && loc.pagamenti[m] === 'sospeso') {
+          loc.pagamenti[m] = 'da-verificare';
+          cambiamenti.push({ studenteId: loc.id, nome: loc.nome + ' ' + loc.cognome, tipo: 'mese', mese: m, importo: loc.quota });
+        }
+      });
+      // Debito pregresso saldato
+      if (sr.debitoPregresso === 0 && loc.debitoPregresso > 0) {
+        cambiamenti.push({ studenteId: loc.id, nome: loc.nome + ' ' + loc.cognome, tipo: 'debito', importo: loc.debitoPregresso });
+        loc.debitoPregresso = 0;
+      }
+      // Iscrizione pagata
+      if (sr.iscrizioneStato === 'pagata' && loc.iscrizioneStato !== 'pagata') {
+        cambiamenti.push({ studenteId: loc.id, nome: loc.nome + ' ' + loc.cognome, tipo: 'iscrizione', importo: loc.iscrizioneQuota||50 });
+        loc.iscrizioneStato = 'pagata';
+      }
+    });
+
+    save(KEYS.studenti, locali);
+    renderStudenti();
+
+    if (cambiamenti.length === 0) {
+      status.textContent = `✅ Nessun nuovo pagamento — ${new Date().toLocaleTimeString('it-IT')}`;
+      alert('Nessun nuovo pagamento trovato sul portale.');
+      return;
+    }
+
+    status.textContent = `⏳ ${cambiamenti.length} pagamenti da verificare — ${new Date().toLocaleTimeString('it-IT')}`;
+    _pendingVerifica = cambiamenti;
+    mostraModalVerifica(cambiamenti);
+
+  } catch(e) {
+    status.textContent = '❌ Errore: ' + e.message;
+  }
+}
+
+const MESI_FULL_MAP = {ott:'Ottobre',nov:'Novembre',dic:'Dicembre',gen:'Gennaio',feb:'Febbraio',mar:'Marzo',apr:'Aprile',mag:'Maggio'};
+
+function mostraModalVerifica(cambiamenti) {
+  const lista = document.getElementById('verifica-lista');
+  // Raggruppa per studente
+  const perStudente = {};
+  cambiamenti.forEach(c => {
+    if (!perStudente[c.studenteId]) perStudente[c.studenteId] = { nome: c.nome, voci: [] };
+    perStudente[c.studenteId].voci.push(c);
+  });
+
+  lista.innerHTML = Object.entries(perStudente).map(([sid, s]) => `
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;background:#fffdf9;">
+      <div style="font-weight:700;margin-bottom:8px;">${s.nome}</div>
+      ${s.voci.map(v => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0e8e0;">
+          <div>
+            <span style="font-size:0.85rem;">
+              ${v.tipo==='mese' ? '📅 ' + (MESI_FULL_MAP[v.mese]||v.mese) :
+                v.tipo==='debito' ? '⚠️ Debito pregresso' : '📋 Iscrizione'}
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-weight:700;color:var(--accent-dark,#cc8c00);">€ ${Number(v.importo||0).toFixed(2).replace('.',',')}</span>
+            <button class="btn btn-sm btn-secondary" onclick="confermaVoce('${sid}','${v.tipo}','${v.mese||''}',this)">✅ Confermato</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+
+  openModal('modal-verifica');
+}
+
+function confermaVoce(sid, tipo, mese, btn) {
+  const studenti = getStudenti();
+  const s = studenti.find(x => x.id === sid);
+  if (!s) return;
+  if (tipo === 'mese' && mese) {
+    s.pagamenti[mese] = 'pagato';
+  }
+  // Aggiungi a confermati
+  const voce = _pendingVerifica.find(v => v.studenteId === sid && v.tipo === tipo && (v.mese||'') === mese);
+  if (voce && !_ultimiConfermati.find(v => v.studenteId===sid && v.tipo===tipo && (v.mese||'')===mese)) {
+    _ultimiConfermati.push(voce);
+  }
+  save(KEYS.studenti, studenti);
+  btn.textContent = '✓ Fatto';
+  btn.disabled = true;
+  btn.style.background = 'var(--secondary)';
+  renderStudenti();
+  // Aggiorna status se tutti confermati
+  const pendingBtns = document.querySelectorAll('#verifica-lista .btn:not(:disabled)');
+  if (pendingBtns.length === 0) {
+    document.getElementById('jsonbin-status').textContent = '✅ Tutti i pagamenti confermati — ' + new Date().toLocaleTimeString('it-IT');
+    if (document.getElementById('tab-riepilogo').classList.contains('active')) renderRiepilogo();
+  }
+}
+
+function confermaTutti() {
+  const studenti = getStudenti();
+  _ultimiConfermati = [];
+  _pendingVerifica.forEach(v => {
+    if (v.tipo === 'mese' && v.mese) {
+      const s = studenti.find(x => x.id === v.studenteId);
+      if (s) { s.pagamenti[v.mese] = 'pagato'; _ultimiConfermati.push(v); }
+    } else {
+      _ultimiConfermati.push(v);
+    }
+  });
+  save(KEYS.studenti, studenti);
+  renderStudenti();
+  closeModal('modal-verifica');
+  document.getElementById('jsonbin-status').textContent = '✅ Tutti i pagamenti confermati — ' + new Date().toLocaleTimeString('it-IT');
+  _pendingVerifica = [];
+  // Aggiorna riepilogo se è visibile
+  if (document.getElementById('tab-riepilogo').classList.contains('active')) renderRiepilogo();
+}
+
+// ================================================================
+// INIT
+// ================================================================
+function init() {
+  const imp = getImpostazioni();
+  document.getElementById('header-anno').textContent = imp.annoScolastico;
+  initRiepilogoMese();
+  renderStudenti();
+}
+
+init();
+</script>
+</body>
+</html>
