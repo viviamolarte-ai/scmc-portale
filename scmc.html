@@ -498,6 +498,13 @@
       <p>Gestionale Scuola di Musica</p>
     </div>
     <div class="header-anno" id="header-anno"></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.85);cursor:pointer;margin-left:8px;">
+      <input type="checkbox" id="toggle-demo-gestionale" onchange="toggleDemoGestionale(this.checked)" style="width:15px;height:15px;cursor:pointer;">
+      🧪 Demo
+    </label>
+  </div>
+  <div id="demo-banner-gestionale" style="display:none;background:linear-gradient(135deg,#F0A500,#cc8c00);color:white;padding:6px 20px;text-align:center;font-size:0.82rem;font-weight:700;letter-spacing:0.03em;">
+    🧪 MODALITÀ DEMO — Dati fittizi, nessuna modifica al localStorage
   </div>
   <nav class="tab-nav">
     <div class="tab-nav-inner">
@@ -505,6 +512,7 @@
       <button class="tab-btn" onclick="switchTab('docenti')">👨‍🏫 Docenti</button>
       <button class="tab-btn" onclick="switchTab('lezioni')">🎵 Lezioni</button>
       <button class="tab-btn" onclick="switchTab('riepilogo')">📊 Riepilogo</button>
+      <button class="tab-btn" onclick="switchTab('bonifici')">💰 Bonifici</button>
       <button class="tab-btn" onclick="switchTab('impostazioni')">⚙️ Impostazioni</button>
     </div>
   </nav>
@@ -576,6 +584,16 @@
     </div>
   </div>
 
+  <!-- TAB BONIFICI -->
+  <div class="tab-pane" id="tab-bonifici">
+    <div class="card">
+      <div class="card-header" style="background:linear-gradient(135deg,#2d8070,#3A9E8F);color:white;">
+        <h2>💰 Bonifici da Mater Carmeli</h2>
+      </div>
+      <div class="card-body" id="contenuto-bonifici"></div>
+    </div>
+  </div>
+
   <!-- TAB IMPOSTAZIONI -->
   <div class="tab-pane" id="tab-impostazioni">
     <div class="card">
@@ -609,23 +627,16 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Tipo Lezione</label>
-          <select class="form-control" id="s-tipo" onchange="aggiornaQuotaAuto()">
-            <option value="singola">Singola</option>
-            <option value="coppia">Coppia</option>
+          <label>Durata Lezione</label>
+          <select class="form-control" id="s-durata" onchange="aggiornaQuotaAuto()">
+            <option value="45">45 min (€ 130)</option>
+            <option value="30">30 min (€ 85)</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Durata</label>
-          <select class="form-control" id="s-durata">
-            <option value="45">45 min</option>
-            <option value="60">60 min</option>
-          </select>
+          <label>Quota Mensile (€) <span id="quota-auto-hint" style="color:var(--secondary);font-weight:400;text-transform:none;letter-spacing:0;font-size:0.82rem;"></span></label>
+          <input type="number" class="form-control" id="s-quota" placeholder="130" min="0" step="0.01">
         </div>
-      </div>
-      <div class="form-group">
-        <label>Quota Mensile (€) <span id="quota-auto-hint" style="color:var(--secondary);font-weight:400;text-transform:none;letter-spacing:0;font-size:0.82rem;"></span></label>
-        <input type="number" class="form-control" id="s-quota" placeholder="130" min="0" step="0.01">
       </div>
       <div class="form-group">
         <label>Strumento / Note</label>
@@ -824,10 +835,11 @@ function loadObj(key, def={}) {
   catch { return def; }
 }
 function save(key, val) {
+  if (_demoMode) return; // Demo: nessuna scrittura
   localStorage.setItem(key, JSON.stringify(val));
 }
 
-function getStudenti() { return load(KEYS.studenti); }
+function getStudenti_ORIG_REMOVED() { return load(KEYS.studenti); }
 function getDocenti() { return load(KEYS.docenti); }
 function getLezioni() { return load(KEYS.lezioni); }
 function getImpostazioni() {
@@ -856,6 +868,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-btn')[idx].classList.add('active');
   if (name === 'lezioni') { populateLezioneSelects(); renderLezioni(); }
   if (name === 'riepilogo') { renderRiepilogo(); }
+  if (name === 'bonifici') { renderBonifici(); }
   if (name === 'impostazioni') { renderImpostazioni(); }
   if (name === 'docenti') { renderDocenti(); }
   if (name === 'studenti') { renderStudenti(); }
@@ -932,7 +945,7 @@ function renderStudenti() {
           <div style="font-weight:700;">${nomeCompleto(s)}${soloDebitore ? ' <span class="badge badge-gray" style="font-size:0.68rem;margin-left:4px;">non attivo</span>' : ''}</div>
           ${s.strumento ? `<div style="font-size:0.78rem;color:var(--text-light);">${s.strumento}</div>` : ''}
         </td>
-        <td><span class="badge ${s.tipo==='coppia'?'badge-blue':'badge-green'}">${s.tipo}</span></td>
+        <td><span class="badge ${s.durata==='30'?'badge-blue':'badge-green'}">${s.durata||'45'}'</span></td>
         <td style="font-weight:600;">${soloDebitore ? '—' : fmt(s.quota)}</td>
         <td>
           ${soloDebitore
@@ -980,14 +993,14 @@ function togglePagamento(sid, mese) {
 }
 
 function aggiornaQuotaAuto() {
-  const tipo = document.getElementById('s-tipo').value;
+  const durata = document.getElementById('s-durata').value;
   const quota = document.getElementById('s-quota');
   const hint = document.getElementById('quota-auto-hint');
-  const def = calcolaQuotaDefault(tipo);
+  const def = durata === '30' ? (getImpostazioni().quotaCoppia||85) : (getImpostazioni().quotaSingola||130);
   if (!quota.dataset.manuallyChanged) {
     quota.value = def;
   }
-  hint.textContent = `(default: ${def}€ per ${tipo})`;
+  hint.textContent = `(default: ${def}€ per ${durata}')`;
 }
 
 let modalMesiStati = {};
@@ -1006,8 +1019,7 @@ function openModalStudente(id=null) {
     document.getElementById('studente-id').value = id;
     document.getElementById('s-nome').value = s.nome;
     document.getElementById('s-cognome').value = s.cognome;
-    document.getElementById('s-tipo').value = s.tipo;
-    document.getElementById('s-durata').value = s.durata || '45';
+    document.getElementById('s-durata').value = s.durata || (s.tipo === 'coppia' ? '30' : '45');
     document.getElementById('s-quota').value = s.quota;
     document.getElementById('s-quota').dataset.manuallyChanged = '1';
     document.getElementById('s-strumento').value = s.strumento || '';
@@ -1021,7 +1033,6 @@ function openModalStudente(id=null) {
     document.getElementById('studente-id').value = '';
     document.getElementById('s-nome').value = '';
     document.getElementById('s-cognome').value = '';
-    document.getElementById('s-tipo').value = 'singola';
     document.getElementById('s-durata').value = '45';
     document.getElementById('s-quota').value = getImpostazioni().quotaSingola;
     document.getElementById('s-quota').dataset.manuallyChanged = '';
@@ -1063,8 +1074,8 @@ function salvaStudente() {
   const id = document.getElementById('studente-id').value || uid();
   const dati = {
     id, nome, cognome,
-    tipo: document.getElementById('s-tipo').value,
     durata: document.getElementById('s-durata').value,
+    tipo: document.getElementById('s-durata').value === '30' ? 'coppia' : 'singola',
     quota: parseFloat(document.getElementById('s-quota').value) || 0,
     strumento: document.getElementById('s-strumento').value.trim(),
     debitoPregresso: parseFloat(document.getElementById('s-debito').value) || 0,
@@ -1926,7 +1937,39 @@ function mostraModalVerifica(cambiamenti) {
     perStudente[c.studenteId].voci.push(c);
   });
 
-  lista.innerHTML = Object.entries(perStudente).map(([sid, s]) => `
+  // Riepilogo bonifico rapido
+  const imp = getImpostazioni();
+  const trattenuta45 = imp.quotaAmm45 || 15;
+  const trattenuta30 = imp.quotaAmm30 || 17.5;
+  let totIncasso = 0, totTrattenuta = 0, totIscrizioni = 0;
+  const studentiAll = getStudenti();
+  cambiamenti.forEach(c => {
+    const s = studentiAll.find(x => x.id === c.studenteId);
+    const durata = s ? (s.durata || (s.tipo==='coppia'?'30':'45')) : '45';
+    if (c.tipo === 'mese') {
+      totIncasso += Number(c.importo||0);
+      totTrattenuta += durata === '30' ? trattenuta30 : trattenuta45;
+    } else if (c.tipo === 'iscrizione') {
+      totIscrizioni += Number(c.importo||0);
+    }
+  });
+  const totNetto = totIncasso - totTrattenuta + totIscrizioni;
+  const fmt2 = v => '€ ' + Number(v).toFixed(2).replace('.', ',');
+
+  const riepilogoHtml = `
+    <div style="background:linear-gradient(135deg,#e8f8f5,#d0f0ea);border-radius:8px;padding:14px;margin-bottom:14px;border:1.5px solid var(--secondary);">
+      <div style="font-weight:700;color:var(--secondary-dark);margin-bottom:8px;font-size:0.9rem;">💰 Bonifico da richiedere per questi pagamenti</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:0.82rem;">Incasso mensile: <strong>${fmt2(totIncasso)}</strong></span>
+        <span style="font-size:0.82rem;color:var(--primary);">Trattenuta: <strong>- ${fmt2(totTrattenuta)}</strong></span>
+        ${totIscrizioni>0 ? `<span style="font-size:0.82rem;color:var(--accent-dark);">Iscrizioni: <strong>${fmt2(totIscrizioni)}</strong></span>` : ''}
+        <span style="font-size:0.95rem;font-weight:700;color:var(--secondary-dark);">→ Netto SCMC: <strong>${fmt2(totNetto)}</strong></span>
+      </div>
+      <div style="font-size:0.73rem;color:var(--text-light);margin-top:4px;">Dettaglio completo nel tab 💰 Bonifici</div>
+    </div>
+  `;
+
+  lista.innerHTML = riepilogoHtml + Object.entries(perStudente).map(([sid, s]) => `
     <div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;background:#fffdf9;">
       <div style="font-weight:700;margin-bottom:8px;">${s.nome}</div>
       ${s.voci.map(v => `
@@ -1995,8 +2038,135 @@ function confermaTutti() {
 }
 
 // ================================================================
-// INIT
+// BONIFICI
 // ================================================================
+function calcolaBonifico(studenti) {
+  const imp = getImpostazioni();
+  const trattenuta45 = imp.quotaAmm45 || 15;
+  const trattenuta30 = imp.quotaAmm30 || 17.5;
+  const mesiAttivi = imp.mesiAttivi;
+  const MESI_LIST = MESI.filter(m => mesiAttivi[m]);
+
+  let totaleIncassato = 0;
+  let totaleTrattenuto = 0;
+  let totaleNetto = 0;
+  let totaleIscrizioni = 0;
+
+  const righe = studenti.filter(s => s.attivo === 'si').map(s => {
+    const durata = s.durata || (s.tipo === 'coppia' ? '30' : '45');
+    const trattenuta = durata === '30' ? trattenuta30 : trattenuta45;
+    const mesiPagati = MESI_LIST.filter(m => s.pagamenti[m] === 'pagato');
+    const incassoMensile = mesiPagati.length * (s.quota || 0);
+    const trattMensile = mesiPagati.length * trattenuta;
+    const nettoMensile = incassoMensile - trattMensile;
+    const incassoIscr = s.iscrizioneStato === 'pagata' ? (s.iscrizioneQuota || 50) : 0;
+
+    totaleIncassato += incassoMensile + incassoIscr;
+    totaleTrattenuto += trattMensile;
+    totaleNetto += nettoMensile + incassoIscr;
+    totaleIscrizioni += incassoIscr;
+
+    return { s, durata, trattenuta, mesiPagati, incassoMensile, trattMensile, nettoMensile, incassoIscr };
+  }).filter(r => r.mesiPagati.length > 0 || r.incassoIscr > 0);
+
+  return { righe, totaleIncassato, totaleTrattenuto, totaleNetto, totaleIscrizioni };
+}
+
+function renderBonifici() {
+  const studenti = getStudenti();
+  const el = document.getElementById('contenuto-bonifici');
+  const { righe, totaleIncassato, totaleTrattenuto, totaleNetto, totaleIscrizioni } = calcolaBonifico(studenti);
+
+  if (righe.length === 0) {
+    el.innerHTML = `<p style="color:var(--text-light);padding:20px;">Nessun pagamento registrato. Sincronizza i dati dal portale.</p>`;
+    return;
+  }
+
+  const fmt2 = v => '€ ' + Number(v).toFixed(2).replace('.', ',');
+
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg,#e8f8f5,#d0f0ea);border-radius:10px;padding:20px;margin-bottom:20px;border:2px solid var(--secondary);">
+      <div style="font-size:1.1rem;font-weight:700;color:var(--secondary-dark);margin-bottom:12px;">📋 Riepilogo da richiedere a Mater Carmeli</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+        <div style="background:white;border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:0.75rem;color:var(--text-light);text-transform:uppercase;letter-spacing:.04em;">Incassato da famiglie</div>
+          <div style="font-size:1.4rem;font-weight:700;color:var(--text);">${fmt2(totaleIncassato)}</div>
+        </div>
+        <div style="background:white;border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:0.75rem;color:var(--text-light);text-transform:uppercase;letter-spacing:.04em;">Trattenuta affitto</div>
+          <div style="font-size:1.4rem;font-weight:700;color:var(--primary);">- ${fmt2(totaleTrattenuto)}</div>
+        </div>
+        <div style="background:white;border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:0.75rem;color:var(--text-light);text-transform:uppercase;letter-spacing:.04em;">Iscrizioni (nette)</div>
+          <div style="font-size:1.4rem;font-weight:700;color:var(--accent-dark);">${fmt2(totaleIscrizioni)}</div>
+        </div>
+        <div style="background:linear-gradient(135deg,var(--secondary),var(--secondary-dark));border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:.04em;">DA BONIFICARE</div>
+          <div style="font-size:1.6rem;font-weight:700;color:white;">${fmt2(totaleNetto)}</div>
+        </div>
+      </div>
+    </div>
+
+    <table class="table" style="font-size:0.88rem;">
+      <thead><tr>
+        <th>Studente</th>
+        <th>Durata</th>
+        <th>Mesi pagati</th>
+        <th style="text-align:right;">Incasso</th>
+        <th style="text-align:right;">Trattenuta</th>
+        <th style="text-align:right;">Iscrizione</th>
+        <th style="text-align:right;background:#e8f8f5;">Netto SCMC</th>
+      </tr></thead>
+      <tbody>
+        ${righe.map(r => `<tr>
+          <td><strong>${nomeCompleto(r.s)}</strong><br><span style="font-size:0.75rem;color:var(--text-light);">${r.s.strumento||''}</span></td>
+          <td><span class="badge ${r.durata==='30'?'badge-blue':'badge-green'}">${r.durata}'</span></td>
+          <td>${r.mesiPagati.map(m=>m.charAt(0).toUpperCase()+m.slice(1)).join(', ')||'—'}</td>
+          <td style="text-align:right;">${fmt2(r.incassoMensile)}</td>
+          <td style="text-align:right;color:var(--primary);">- ${fmt2(r.trattMensile)}</td>
+          <td style="text-align:right;color:var(--accent-dark);">${r.incassoIscr > 0 ? fmt2(r.incassoIscr) : '—'}</td>
+          <td style="text-align:right;font-weight:700;background:#e8f8f5;">${fmt2(r.nettoMensile + r.incassoIscr)}</td>
+        </tr>`).join('')}
+      </tbody>
+      <tfoot><tr style="font-weight:700;background:#d0f0ea;">
+        <td colspan="3">TOTALE</td>
+        <td style="text-align:right;">${fmt2(totaleIncassato - totaleIscrizioni)}</td>
+        <td style="text-align:right;color:var(--primary);">- ${fmt2(totaleTrattenuto)}</td>
+        <td style="text-align:right;color:var(--accent-dark);">${fmt2(totaleIscrizioni)}</td>
+        <td style="text-align:right;font-weight:800;font-size:1.05rem;background:#b2e8de;">💰 ${fmt2(totaleNetto)}</td>
+      </tr></tfoot>
+    </table>
+    <p style="font-size:0.75rem;color:var(--text-light);margin-top:12px;">
+      Trattenuta affitto: 45' → €${getImpostazioni().quotaAmm45||15}/mese · 30' → €${getImpostazioni().quotaAmm30||17.5}/mese · Le iscrizioni sono interamente a SCMC.
+    </p>
+  `;
+}
+
+// ================================================================
+// DEMO MODE GESTIONALE
+// ================================================================
+let _demoMode = false;
+const DEMO_STUDENTI = [
+  { id:'demo001', nome:'Mario', cognome:'Rossi', durata:'45', tipo:'singola', quota:130, strumento:'Chitarra', attivo:'si', debitoPregresso:0, iscrizioneQuota:50, iscrizioneStato:'pagata', pagamenti:{ott:'pagato',nov:'pagato',dic:'pagato',gen:'sospeso',feb:'sospeso',mar:'sospeso',apr:'sospeso',mag:'sospeso'} },
+  { id:'demo002', nome:'Lucia', cognome:'Bianchi', durata:'30', tipo:'coppia', quota:85, strumento:'Violino', attivo:'si', debitoPregresso:0, iscrizioneQuota:25, iscrizioneStato:'pagata', pagamenti:{ott:'pagato',nov:'pagato',dic:'sospeso',gen:'sospeso',feb:'sospeso',mar:'sospeso',apr:'sospeso',mag:'sospeso'} },
+  { id:'demo003', nome:'Sofia', cognome:'Verdi', durata:'45', tipo:'singola', quota:130, strumento:'Batteria', attivo:'si', debitoPregresso:130, iscrizioneQuota:50, iscrizioneStato:'non-pagata', pagamenti:{ott:'sospeso',nov:'sospeso',dic:'sospeso',gen:'sospeso',feb:'sospeso',mar:'sospeso',apr:'sospeso',mag:'sospeso'} },
+  { id:'demo004', nome:'Luca', cognome:'Ferrari', durata:'30', tipo:'coppia', quota:85, strumento:'Pianoforte', attivo:'si', debitoPregresso:0, iscrizioneQuota:25, iscrizioneStato:'non-pagata', pagamenti:{ott:'pagato',nov:'pagato',dic:'pagato',gen:'pagato',feb:'sospeso',mar:'sospeso',apr:'sospeso',mag:'sospeso'} },
+];
+
+function toggleDemoGestionale(val) {
+  _demoMode = val;
+  const banner = document.getElementById('demo-banner-gestionale');
+  if (banner) banner.style.display = val ? 'block' : 'none';
+  renderStudenti();
+  if (document.getElementById('tab-bonifici').classList.contains('active')) renderBonifici();
+}
+
+function getStudenti() {
+  if (_demoMode) return JSON.parse(JSON.stringify(DEMO_STUDENTI));
+  return JSON.parse(localStorage.getItem(KEYS.studenti) || '[]');
+}
+
+
 function init() {
   const imp = getImpostazioni();
   document.getElementById('header-anno').textContent = imp.annoScolastico;
