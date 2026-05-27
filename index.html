@@ -505,13 +505,13 @@ async function scriviSuJsonBin(dati) {
 // ================================================================
 async function caricaDati() {
   const cfg = getConfig();
-  if (!cfg.masterKey || !cfg.binId) {
+  if (!cfg.scriptUrl) {
     document.getElementById('config-panel').style.display = '';
     setStatus('error', 'Non configurato');
     return;
   }
   document.getElementById('config-panel').style.display = 'none';
-  setStatus('loading', 'Connessione a JSONBin…');
+  setStatus('loading', 'Connessione in corso…');
   showLoading('Caricamento dati studenti…');
 
   try {
