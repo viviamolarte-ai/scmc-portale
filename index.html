@@ -448,11 +448,16 @@ function toggleDemo(val) {
   isDemoMode = val;
   document.getElementById('demo-banner').style.display = val ? 'block' : 'none';
   document.getElementById('btn-salva').textContent = val ? '🧪 Simula salvataggio' : '💾 Salva pagamenti';
-  if (!val) {
+  if (val) {
+    setStatus('ok', '🧪 Modalità demo — nessun dato verrà modificato');
+  } else {
     // Uscendo dalla demo, resetta le spunte
     spunteOggi = {};
     aggiornaBottoneSalva();
-    renderPortale();
+    if (datiRemoti) {
+      setStatus('ok', 'Connesso · dati aggiornati');
+      renderPortale();
+    }
   }
 }
 let datiRemoti = null; // dati letti da JSONBin
