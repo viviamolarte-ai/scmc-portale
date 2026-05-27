@@ -365,10 +365,21 @@
     <span class="status-dot" id="status-dot"></span>
     <span id="status-text">Connessione in corso…</span>
   </div>
-  <div style="display:flex;gap:8px;align-items:center;">
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
     <span id="ultimo-aggiornamento" style="font-size:0.78rem;color:var(--text-light);"></span>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;font-weight:600;">
+      <span>🧪 Demo</span>
+      <div class="toggle" style="width:36px;height:20px;">
+        <input type="checkbox" id="toggle-demo" onchange="toggleDemo(this.checked)">
+        <span class="toggle-slider"></span>
+      </div>
+    </label>
     <button class="btn btn-sm btn-secondary" onclick="caricaDati()">🔄 Ricarica</button>
   </div>
+</div>
+
+<div id="demo-banner" style="display:none;background:linear-gradient(135deg,#F0A500,#cc8c00);color:white;padding:8px 20px;text-align:center;font-size:0.85rem;font-weight:700;letter-spacing:0.03em;">
+  🧪 MODALITÀ DEMO — Le spunte NON vengono salvate
 </div>
 
 <div class="main">
@@ -431,6 +442,19 @@ const MESI_FULL = {
 
 // Stato locale delle spunte fatte OGGI (non ancora salvate)
 let spunteOggi = {}; // { studenteId: { mese: true/false } }
+let isDemoMode = false;
+
+function toggleDemo(val) {
+  isDemoMode = val;
+  document.getElementById('demo-banner').style.display = val ? 'block' : 'none';
+  document.getElementById('btn-salva').textContent = val ? '🧪 Simula salvataggio' : '💾 Salva pagamenti';
+  if (!val) {
+    // Uscendo dalla demo, resetta le spunte
+    spunteOggi = {};
+    aggiornaBottoneSalva();
+    renderPortale();
+  }
+}
 let datiRemoti = null; // dati letti da JSONBin
 
 // ================================================================
