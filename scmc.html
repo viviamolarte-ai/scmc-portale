@@ -1872,6 +1872,57 @@ let _ultimiConfermati = []; // pagamenti confermati nell'ultima sessione di sync
 
 async function sincronizzaDaJsonBin() {
   const cfg = getGScriptConfig();
+
+  // MODALITÀ DEMO: legge da localStorage invece del Google Script
+  if (_demoMode) {
+    const status = document.getElementById('jsonbin-status');
+    const raw = localStorage.getItem('scmc_demo_sync');
+    if (!raw) {
+      status.textContent = '🧪 Demo: nessun dato trovato — fleggа prima qualcosa nel portale demo';
+      alert('🧪 Demo: nessuna spunta trovata.\nApri il portale (index.html), attiva la demo, flegga qualche pagamento e premi "Simula salvataggio".');
+      return;
+    }
+    status.textContent = '⏳ Demo: lettura dati dal portale demo…';
+    const remoti = JSON.parse(raw);
+    if (!remoti || !remoti.studenti) { status.textContent = '❌ Demo: dati non validi'; return; }
+
+    const locali = JSON.parse(JSON.stringify(DEMO_STUDENTI)); // usa i demo locali come base
+    const cambiamenti = [];
+    remoti.studenti.forEach(sr => {
+      const loc = locali.find(l => l.id === sr.id);
+      if (!loc) return;
+      Object.entries(sr.pagamenti || {}).forEach(([m, v]) => {
+        if (v === 'pagato' && loc.pagamenti[m] === 'sospeso') {
+          loc.pagamenti[m] = 'da-verificare';
+          cambiamenti.push({ studenteId: loc.id, nome: loc.nome + ' ' + loc.cognome, tipo: 'mese', mese: m, importo: loc.quota });
+        }
+      });
+      if (sr.debitoPregresso === 0 && loc.debitoPregresso > 0) {
+        cambiamenti.push({ studenteId: loc.id, nome: loc.nome + ' ' + loc.cognome, tipo: 'debito', importo: loc.debitoPregresso });
+        loc.debitoPregresso = 0;
+      }
+      if (sr.iscrizioneStato === 'pagata' && loc.iscrizioneStato !== 'pagata') {
+        cambiamenti.push({ studenteId: loc.id, nome: loc.nome + ' ' + loc.cognome, tipo: 'iscrizione', importo: loc.iscrizioneQuota||50 });
+        loc.iscrizioneStato = 'pagata';
+      }
+    });
+
+    // Aggiorna i DEMO_STUDENTI in memoria (senza toccare localStorage reale)
+    DEMO_STUDENTI.length = 0;
+    locali.forEach(s => DEMO_STUDENTI.push(s));
+    renderStudenti();
+
+    if (cambiamenti.length === 0) {
+      status.textContent = `🧪 Demo: nessun nuovo pagamento — ${new Date().toLocaleTimeString('it-IT')}`;
+      alert('🧪 Demo: nessun nuovo pagamento trovato.\nAssicurati di aver fleggato qualcosa nel portale demo.');
+      return;
+    }
+    status.textContent = `🧪 Demo: ${cambiamenti.length} pagamenti da verificare`;
+    _pendingVerifica = cambiamenti;
+    mostraModalVerifica(cambiamenti);
+    return;
+  }
+
   if (!cfg.scriptUrl) { alert('Configura prima URL Google Script'); return; }
   const status = document.getElementById('jsonbin-status');
   status.textContent = '⏳ Sincronizzazione in corso…';

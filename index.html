@@ -449,18 +449,32 @@ function toggleDemo(val) {
   document.getElementById('demo-banner').style.display = val ? 'block' : 'none';
   document.getElementById('btn-salva').textContent = val ? '🧪 Simula salvataggio' : '💾 Salva pagamenti';
   if (val) {
+    // Carica studenti fittizi — reset delle spunte demo precedenti
+    localStorage.removeItem('scmc_demo_sync');
+    datiRemoti = { studenti: JSON.parse(JSON.stringify(DEMO_STUDENTI_PORTALE)) };
+    spunteOggi = {};
     setStatus('ok', '🧪 Modalità demo — nessun dato verrà modificato');
+    document.getElementById('config-panel').style.display = 'none';
+    document.getElementById('save-bar').style.display = 'flex';
+    renderPortale();
   } else {
-    // Uscendo dalla demo, resetta le spunte
+    // Uscendo dalla demo, resetta tutto
+    datiRemoti = null;
     spunteOggi = {};
     aggiornaBottoneSalva();
-    if (datiRemoti) {
-      setStatus('ok', 'Connesso · dati aggiornati');
-      renderPortale();
-    }
+    document.getElementById('save-bar').style.display = 'none';
+    document.getElementById('contenuto-principale').innerHTML = `<div class="empty-msg"><div class="icon">🎓</div><p>Ricarica i dati reali.</p></div>`;
+    setStatus('ok', 'Demo disattivata');
   }
 }
 let datiRemoti = null; // dati letti da JSONBin
+
+const DEMO_STUDENTI_PORTALE = [
+  { id:'demo001', nome:'Mario', cognome:'Rossi', durata:'45', tipo:'singola', quota:130, strumento:'Chitarra', attivo:'si', debitoPregresso:0, iscrizioneQuota:50, iscrizioneStato:'non-pagata', pagamenti:{ott:'sospeso',nov:'sospeso',dic:'sospeso',gen:'sospeso',feb:'sospeso',mar:'sospeso',apr:'sospeso',mag:'sospeso'} },
+  { id:'demo002', nome:'Lucia', cognome:'Bianchi', durata:'30', tipo:'coppia', quota:85, strumento:'Violino', attivo:'si', debitoPregresso:0, iscrizioneQuota:25, iscrizioneStato:'non-pagata', pagamenti:{ott:'sospeso',nov:'sospeso',dic:'sospeso',gen:'sospeso',feb:'sospeso',mar:'sospeso',apr:'sospeso',mag:'sospeso'} },
+  { id:'demo003', nome:'Sofia', cognome:'Verdi', durata:'45', tipo:'singola', quota:130, strumento:'Batteria', attivo:'si', debitoPregresso:130, iscrizioneQuota:50, iscrizioneStato:'non-pagata', pagamenti:{ott:'sospeso',nov:'sospeso',dic:'sospeso',gen:'sospeso',feb:'sospeso',mar:'sospeso',apr:'sospeso',mag:'sospeso'} },
+  { id:'demo004', nome:'Luca', cognome:'Ferrari', durata:'30', tipo:'coppia', quota:85, strumento:'Pianoforte', attivo:'si', debitoPregresso:0, iscrizioneQuota:25, iscrizioneStato:'non-pagata', pagamenti:{ott:'sospeso',nov:'sospeso',dic:'sospeso',gen:'sospeso',feb:'sospeso',mar:'sospeso',apr:'sospeso',mag:'sospeso'} },
+];
 
 // ================================================================
 // UI HELPERS
@@ -752,11 +766,29 @@ async function salvaPagamenti() {
     );
     if (spunteAttive.length === 0) { showToast('Nessuna spunta da salvare', 'error'); return; }
     showLoading('Simulazione salvataggio…');
-    await new Promise(r => setTimeout(r, 800)); // piccola pausa realistica
-    hideLoading();
-    showToast('🧪 Demo: salvataggio simulato (nessun dato modificato)', 'success');
+    await new Promise(r => setTimeout(r, 800));
+
+    // Applica le spunte ai dati demo e salva su localStorage per il gestionale
+    const nuoviDati = JSON.parse(JSON.stringify(datiRemoti));
+    const ora = new Date().toISOString();
+    Object.entries(spunteOggi).forEach(([sid, mesi]) => {
+      const s = nuoviDati.studenti.find(x => x.id === sid);
+      if (!s) return;
+      Object.entries(mesi).forEach(([m, val]) => {
+        if (!val) return;
+        if (m === '__debito') { s.debitoPregresso = 0; }
+        else if (m === '__iscrizione') { s.iscrizioneStato = 'pagata'; }
+        else { s.pagamenti[m] = 'pagato'; }
+      });
+    });
+    nuoviDati.ultimoAggiornamento = ora;
+    localStorage.setItem('scmc_demo_sync', JSON.stringify(nuoviDati));
+
+    datiRemoti = nuoviDati;
     spunteOggi = {};
     aggiornaBottoneSalva();
+    hideLoading();
+    showToast('🧪 Demo: spunte salvate — ora sincronizza nel gestionale', 'success');
     renderPortale();
     return;
   }
