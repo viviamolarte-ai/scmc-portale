@@ -745,6 +745,22 @@ function aggiornaBottoneSalva() {
 // SALVA PAGAMENTI
 // ================================================================
 async function salvaPagamenti() {
+  // Gestione modalità demo
+  if (isDemoMode) {
+    const spunteAttive = Object.entries(spunteOggi).filter(([sid, mesi]) =>
+      Object.values(mesi).some(v => v)
+    );
+    if (spunteAttive.length === 0) { showToast('Nessuna spunta da salvare', 'error'); return; }
+    showLoading('Simulazione salvataggio…');
+    await new Promise(r => setTimeout(r, 800)); // piccola pausa realistica
+    hideLoading();
+    showToast('🧪 Demo: salvataggio simulato (nessun dato modificato)', 'success');
+    spunteOggi = {};
+    aggiornaBottoneSalva();
+    renderPortale();
+    return;
+  }
+
   const cfg = getConfig();
   if (!cfg.masterKey || !cfg.binId) { showToast('Non configurato', 'error'); return; }
 
